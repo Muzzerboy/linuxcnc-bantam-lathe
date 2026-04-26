@@ -1,0 +1,162 @@
+probe_basic_lathe.ini -- Changes from simulation defaults to machine settings
+Date: 22 April 2026
+Source of machine values: gmoccapy_lathe/gmoccapy_lathe.ini (known-working)
+Backup of original file: probe_basic_lathe.ini.bak
+================================================================================
+
+[DISPLAY]
+  POSITION_OFFSET       RELATIVE          -> MACHINE
+  MAX_LINEAR_VELOCITY   3.333334          -> 5.000000
+  DEFAULT_SPINDLE_SPEED 300               -> 1000
+  MAX_SPINDLE_OVERRIDE  2.000000          -> 1.5000000
+  INCREMENTS            JOG .10in .01in   -> JOG 1mm 0.6mm 0.3mm 0.1mm 0.05mm 0.02mm
+                            .001in .0001in
+
+[RS274NGC]
+  RS274NGC_STARTUP_CODE G90 G7 G18 G95    -> G7 G18
+                        G96 D2000 S200
+  PARAMETER_FILE        sim-lathe.var     -> linuxcnc.var
+
+[EMCMOT]
+  BASE_PERIOD = 100000                    -> REMOVED (not needed with Mesa FPGA hardware)
+
+[HAL]
+  HALFILE = hallib/core_sim_2.hal         -> REMOVED (simulation files)
+  HALFILE = hallib/simulated_home_xz.hal  -> REMOVED
+  HALFILE = hallib/simulated_lathe.hal    -> REMOVED
+                                          -> ADDED: HALFILE = hallib/Bantam_v1.hal
+                                          -> ADDED: HALFILE = hallib/xhc-whb04b-6.hal
+                                          -> ADDED: SHUTDOWN = hallib/shutdown.hal
+  POSTGUI_HALFILE = hallib/time.hal       -> REMOVED (see hal_changes log -- PB postgui
+                                             already handles time; duplicate would crash)
+  POSTGUI_HALFILE = hallib/probe_basic_lathe_postgui.hal  (kept)
+
+[TRAJ]
+  LINEAR_UNITS          inch              -> mm
+  MAX_LINEAR_VELOCITY   3.333334          -> 100.00
+  NO_FORCE_HOMING       0                 -> 1
+  DEFAULT_VELOCITY = 1.0                  -> REMOVED
+  DEFAULT_ACCELERATION = 20.0             -> REMOVED
+  MAX_ACCELERATION = 20.0                 -> REMOVED
+
+[AXIS_X]
+  MIN_LIMIT             -5.0              -> -100
+  MAX_LIMIT             5.0               -> 1.0
+  MAX_VELOCITY          3.333334          -> 100.0
+  MAX_ACCELERATION      20.0              -> 600.0
+
+[JOINT_0]
+  MAX_VELOCITY          3.333334          -> 100
+  MAX_ACCELERATION      20.0              -> 600.0
+  INPUT_SCALE           4000              -> -200
+  MIN_LIMIT             -5.0              -> -100.0
+  MAX_LIMIT             5.0               -> 1
+  FERROR                0.050             -> 10
+  MIN_FERROR            0.010             -> 1.00
+  HOME_OFFSET           1.0               -> 2.0
+  HOME_IGNORE_LIMITS    NO                -> YES
+  HOME_IS_SHARED = 1                      -> REMOVED
+  ADDED: STEPGEN_MAXVEL    = 125
+  ADDED: STEPGEN_MAXACCEL  = 750
+  ADDED: P = 60,  I = 40,  D = 1
+  ADDED: FF0 = 0, FF1 = 0.4, FF2 = 0.01
+  ADDED: BIAS = 0, DEADBAND = 0.0045, MAX_OUTPUT = 0
+  ADDED: DIRSETUP = 10000, DIRHOLD = 10000
+  ADDED: STEPLEN = 2500,   STEPSPACE = 2500
+  ADDED: STEP_SCALE = 1000
+
+[AXIS_Z]
+  MIN_LIMIT             0                 -> -440
+  MAX_LIMIT             12.0              -> 2.0
+  MAX_VELOCITY          3.333334          -> 100
+  MAX_ACCELERATION      20.0              -> 600
+
+[JOINT_1]
+  MAX_VELOCITY          3.333334          -> 100
+  MAX_ACCELERATION      20.0              -> 600
+  INPUT_SCALE           4000              -> 200
+  MIN_LIMIT             0.0               -> -440
+  MAX_LIMIT             12.0              -> 2.0
+  FERROR                0.050             -> 50
+  MIN_FERROR            0.010             -> 10.0
+  HOME_OFFSET           1.0               -> 5.0
+  HOME_IGNORE_LIMITS    NO                -> YES
+  HOME_SEQUENCE         1                 -> (blank -- Z not auto-sequenced, matches gmoccapy)
+  HOME_IS_SHARED = 1                      -> REMOVED
+  ADDED: STEPGEN_MAXVEL    = 125
+  ADDED: STEPGEN_MAXACCEL  = 750
+  ADDED: P = 50,  I = 10,  D = 3
+  ADDED: FF0 = 0, FF1 = 0.85, FF2 = 0.005
+  ADDED: BIAS = 0, DEADBAND = 0.0045, MAX_OUTPUT = 0
+  ADDED: DIRSETUP = 10000, DIRHOLD = 10000
+  ADDED: STEPLEN = 2500,   STEPSPACE = 2500
+  ADDED: STEP_SCALE = 846.15
+
+[SPINDLE_0]  -- ENTIRE SECTION ADDED (was absent from simulation file)
+  P = 1, I = 0, D = 0
+  FF0 = 1, FF1 = 0, FF2 = 0
+  BIAS = 0, DEADBAND = 0
+  MAX_OUTPUT = 4000
+  ENCODER_SCALE = 2400
+  OUTPUT_SCALE = 4475
+  OUTPUT_MIN_LIMIT = 0
+  OUTPUT_MAX_LIMIT = 4000
+
+================================================================================
+Lines NOT changed (probe_basic_lathe specific, left as-is):
+  [DISPLAY]  DISPLAY, BACK_TOOL_LATHE, CONFIRM_EXIT, PREFERENCE_FILE,
+             CONFIG_FILE, INTRO_GRAPHIC, OPEN_FILE, USER_BUTTONS_PATH,
+             USER_DROS_PATH, DRO_DISPLAY, OFFSET_COLUMNS,
+             TOOL_TABLE_COLUMNS, KEYBOARD_JOG, KEYBOARD_JOG_SAFETY_OFF
+  [RS274NGC] SUBROUTINE_PATH
+  [EMCIO]    TOOL_TABLE = lathe.tbl
+================================================================================
+
+================================================================================
+ADDITIONAL CHANGES -- 23 April 2026 (debugging / first-run fixes)
+================================================================================
+
+[TRAJ]
+  SPINDLES              2                 -> 1
+  REASON: emcMotionInit: emcSpindleInit(1) failed on startup. HAL only wires
+          spindle.0.*; a second spindle cannot be initialised.
+
+[DISPLAY]
+  ADDED: POSITION = 0x0
+  ADDED: SIZE = 1920x1080
+  REASON: Move PB window to secondary display (HDMI-1 at offset 0,0).
+          SIZE used instead of MAXIMIZE to avoid Qt race condition where
+          showMaximized() fires before the window manager processes move().
+
+================================================================================
+FILE AND FOLDER TIDY-UP (same session)
+================================================================================
+  CREATED:   linuxcnc.var  (copied from sim-lathe.var before archiving)
+             REASON: INI PARAMETER_FILE now references linuxcnc.var; the file
+             must exist on first run or LinuxCNC will error on startup.
+
+  ARCHIVED to archive/ (no longer active):
+    probe_basic_lathe.ini.bak
+    probe_basic_lathe.ini.bak2
+    sim-lathe.var
+    sim-lathe.var.bak
+    sim.log
+    changes_from_sim_to_machine_2026-04-22.txt  (this file)
+    hal_changes_2026-04-22.txt
+
+  ARCHIVED to archive/hallib/:
+    core_sim_2.hal
+    core_sim_4.hal
+    core_xyzclathe_sim.hal
+    sim_spindle_encoder.hal
+    simulated_home_xyzc.hal
+    simulated_home_xz.hal
+    simulated_lathe.hal
+    spindle_sim.hal
+
+  ACTIVE files remaining in hallib/:
+    Bantam_v1.hal
+    xhc-whb04b-6.hal
+    shutdown.hal
+    probe_basic_lathe_postgui.hal
+================================================================================

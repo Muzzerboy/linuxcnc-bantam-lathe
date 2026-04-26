@@ -1,0 +1,7 @@
+*.log
+*.pyc
+__pycache__/
+*.pickle
+sim.pref
+linuxcnc.var
+linuxcnc.var.bak

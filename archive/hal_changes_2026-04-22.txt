@@ -1,0 +1,206 @@
+pb_lathe_murray -- HAL files created/changed for real hardware
+Date: 22 April 2026
+Source of machine HAL: gmoccapy_Bantam/combined.hal (30 Nov 2025, known-working)
+INI backup before changes: probe_basic_lathe.ini.bak2
+================================================================================
+
+OVERVIEW
+--------
+The simulation HAL files were replaced with real hardware HAL files derived
+from the working gmoccapy_Bantam configuration. Three new files were created
+in hallib/ and one line was removed from the INI.
+
+================================================================================
+FILE: probe_basic_lathe.ini
+================================================================================
+
+[HAL] section:
+  REMOVED:  POSTGUI_HALFILE = hallib/time.hal
+  REASON:   probe_basic_lathe_postgui.hal already loads the 'time' and 'not'
+            RT components and connects all time signals to qtpyvcp. Loading
+            time.hal as a second postgui file would cause a duplicate loadrt
+            error on startup.
+
+================================================================================
+FILE: hallib/Bantam_v1.hal  (NEW -- did not exist before)
+================================================================================
+
+SOURCE:     gmoccapy_Bantam/combined.hal (30 Nov 2025)
+
+WHAT IT DOES:
+  - Loads hostmot2 / hm2_pci for the Mesa 5i25/7i76 hardware
+  - Configures closed-loop stepgen + encoder feedback for X (joint 0) and Z (joint 1)
+  - Configures spindle PID, digital pot output, and encoder feedback
+  - Sets up limit/home switches, estop latch, HALUI jog signals
+  - Provides tool-change nets for the PB postgui to connect
+
+CHANGES MADE vs gmoccapy_Bantam/combined.hal:
+  1. hal_manualtoolchange REMOVED
+       gmoccapy used:
+         loadusr -W hal_manualtoolchange
+         net tool-change-request  iocontrol.0.tool-change  =>  hal_manualtoolchange.change
+         net tool-change-confirmed iocontrol.0.tool-changed <=  hal_manualtoolchange.changed
+         net tool-number  iocontrol.0.tool-prep-number  =>  hal_manualtoolchange.number
+       Replaced with (iocontrol nets only, no component loaded):
+         net tool-change-request   iocontrol.0.tool-change
+         net tool-change-confirmed iocontrol.0.tool-changed
+         net tool-number           iocontrol.0.tool-prep-number
+         net tool-prepare-loopback iocontrol.0.tool-prepare => iocontrol.0.tool-prepared
+       REASON: Probe Basic handles tool changes via qtpyvcp_manualtoolchange,
+               which is connected in probe_basic_lathe_postgui.hal
+
+  2. scale_to_rpm component ADDED
+       loadrt scale names=scale_to_rpm
+       addf scale_to_rpm.0 servo-thread
+       setp scale_to_rpm.0.gain 60
+       net spindle-vel-fb-rps => scale_to_rpm.0.in
+       REASON: probe_basic_lathe_postgui.hal expects scale_to_rpm.0.out to
+               exist so it can feed qtpyvcp.spindle-encoder-rpm.in.
+               The encoder gives velocity in RPS; gain of 60 converts to RPM.
+
+  KEPT from combined.hal (not in original Bantam_v1.hal):
+    - setp hm2_5i25.0.dpll.01.timer-us -50
+    - setp hm2_5i25.0.stepgen.timer-number 1
+      (performance/timing tweaks added Nov 2025)
+    - net machine-is-on halui.machine.is-on
+    - net tooloffset-x/z <= motion.tooloffset.x/z
+
+  NOTE: net axis-select-x/z halui.axis.x/z.select was initially kept but
+        later REMOVED (see 23 April fixes below) -- pendant must drive these.
+
+================================================================================
+FILE: hallib/xhc-whb04b-6.hal  (NEW -- did not exist before)
+================================================================================
+
+SOURCE:     gmoccapy_Bantam/xhc-whb04b-6.hal (30 Nov 2025)
+CHANGES:    None -- copied verbatim. This is the correct version for the
+            Bantam hardware configuration. The older gmoccapy_lathe version
+            (hallib/xhc-whb04b-6.hal) differs in two places:
+              - axis.select lines: older version connects to halui.axis.x/z.select
+                directly; Bantam version leaves those commented out (the main
+                HAL declares them separately via net axis-select-x/z)
+              - spindle.is-on and spindle-speed-abs: older version connects
+                these directly to spindle.0 pins; Bantam version comments them
+                out to avoid duplicate driver conflicts
+
+================================================================================
+FILE: hallib/shutdown.hal  (NEW -- did not exist before)
+================================================================================
+
+SOURCE:     gmoccapy_Bantam/shutdown.hal
+CONTENT:    Empty placeholder (comment only). No shutdown commands required.
+
+================================================================================
+ADDITIONAL CHANGES -- 23 April 2026 (debugging / first-run fixes)
+================================================================================
+
+FILE: hallib/Bantam_v1.hal
+----------------------------------------------------------------------
+  1. scale_to_rpm function and pin names corrected
+       addf scale_to_rpm.0 servo-thread  ->  addf scale_to_rpm servo-thread
+       setp scale_to_rpm.0.gain          ->  setp scale_to_rpm.gain
+       net  ... scale_to_rpm.0.in        ->  net  ... scale_to_rpm.in
+       REASON: loadrt with names= syntax creates bare function/pin names
+               (no .0 index). HAL errored: "function 'scale_to_rpm.0' not found"
+
+  2. Removed undriven axis-select nets
+       REMOVED: net axis-select-x  halui.axis.x.select
+       REMOVED: net axis-select-z  halui.axis.z.select
+       REASON: These nets had no driver so halui.axis.x/z.select was always
+               FALSE. Pendant must drive these via xhc-whb04b-6.hal instead.
+
+FILE: hallib/xhc-whb04b-6.hal
+----------------------------------------------------------------------
+  1. machine-is-on feedback connected to pendant
+       #@ net machine.is-on ... whb.halui.machine.is-on  ->  ACTIVE:
+       net machine-is-on  whb.halui.machine.is-on
+       REASON: Without this, pendant thinks machine is always off and
+               suppresses all jog output. Display synced but wheel did nothing.
+
+  2. Axis select connected to halui
+       net pdnt.axis.x.select  whb.halui.axis.x.select  # halui.axis.x.select
+       ->
+       net pdnt.axis.x.select  whb.halui.axis.x.select  halui.axis.x.select
+       (same for Z)
+       REASON: halui must know which axis is selected for jog-counts to be
+               processed. Matches the working gmoccapy_lathe wiring.
+
+  3. Spindle is-on feedback connected to pendant
+       net pdnt.spindle.is-on  whb.halui.spindle.is-on  #@ spindle.0.on
+       ->
+       net spindle-enable  whb.halui.spindle.is-on
+       REASON: Without feedback, pendant always thinks spindle is off and
+               always sends START instead of toggling. S-ON/OFF only caused
+               a brief glitch rather than stopping the spindle.
+               spindle-enable is already driven by spindle.0.on in Bantam_v1.hal.
+
+FILE: hallib/probe_basic_lathe_postgui.hal
+----------------------------------------------------------------------
+  1. Duplicate signal conflicts resolved
+       net prog-running not.0.in <= halui.program.is-idle
+       ->  net pdnt.program.is-idle => not.0.in
+       net prog-paused halui.program.is-paused => time.0.pause
+       ->  net pdnt.program.is-paused => time.0.pause
+       REASON: halui.program.is-idle and halui.program.is-paused were already
+               connected to pdnt.* signals by xhc-whb04b-6.hal. Connecting
+               them to a second signal caused "pin already linked" error on
+               startup. Fix: reuse the existing pdnt.* signals.
+
+  2. scale_to_rpm output pin name corrected
+       scale_to_rpm.0.out  ->  scale_to_rpm.out
+       REASON: Matching the names= syntax fix made in Bantam_v1.hal.
+
+SYSTEM FILE (outside config directory)
+----------------------------------------------------------------------
+  /usr/lib/python3/dist-packages/probe_basic_lathe/probe_basic_lathe_ui.py
+    label_5.setText(...)  ->  label_5.setText("")
+    REASON: Cleared the static "5/30/2025 ACTION REQUIRED" notification.
+            stdglue.py was already up to date; the notice was a baked-in
+            static label with no runtime check. Will return if package updated.
+
+================================================================================
+SIMULATION FILES ARCHIVED (moved to archive/hallib/)
+================================================================================
+  core_sim_2.hal
+  core_sim_4.hal
+  core_xyzclathe_sim.hal
+  sim_spindle_encoder.hal
+  simulated_home_xyzc.hal
+  simulated_home_xz.hal
+  simulated_lathe.hal
+  spindle_sim.hal
+
+================================================================================
+FILE AND FOLDER TIDY-UP (same session)
+================================================================================
+  CREATED:   linuxcnc.var  (copied from sim-lathe.var before archiving)
+             REASON: INI PARAMETER_FILE references linuxcnc.var; the file
+             must exist on first run or LinuxCNC will error on startup.
+
+  ARCHIVED to archive/ (no longer active):
+    probe_basic_lathe.ini.bak
+    probe_basic_lathe.ini.bak2
+    sim-lathe.var
+    sim-lathe.var.bak
+    sim.log
+    changes_from_sim_to_machine_2026-04-22.txt
+    hal_changes_2026-04-22.txt  (this file)
+
+  ACTIVE files remaining in root:
+    probe_basic_lathe.ini
+    custom_config.yml
+    lathe.tbl
+    linuxcnc.var
+    pbsplash.png
+    python/
+    subroutines/
+    user_buttons/
+    user_dro_display/
+    user_tabs/
+
+  ACTIVE files remaining in hallib/:
+    Bantam_v1.hal
+    xhc-whb04b-6.hal
+    shutdown.hal
+    probe_basic_lathe_postgui.hal
+================================================================================
