@@ -30,11 +30,7 @@ o<chamfer> sub
 G8  ; Lathe radius Mode
 G18 ; XZ Plane
 G90 ; Absolute Distance
-        o106 if [#<chamfer_units> EQ 21]
-             G21
-        o106 else
-             G20
-        o106 endif
+G21 ; Metric
 
 
 #<chamfer_x> = [#<chamfer_x> / 2] ; because of radius mode

@@ -25,11 +25,7 @@ o<drill> sub
 
 G7  ; diameter mode
 G17 ; XY Plane
-        o106 if [#<drilling_units> EQ 21]
-             G21
-        o106 else
-             G20
-        o106 endif
+G21 ; Metric
 G90 ; Absolute Distance
 G91.1 ; but not for arcs
 

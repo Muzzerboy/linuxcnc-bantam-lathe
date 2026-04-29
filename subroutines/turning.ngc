@@ -28,11 +28,7 @@ o<turning> sub
 G7  ; Diameter mode
 G18 ; XZ Plane
 G90 ; Absolute Distance
-        o106 if [#<turning_units> EQ 21]
-             G21
-        o106 else
-             G20
-        o106 endif
+G21 ; Metric
 
 #<starting_x> = [#<_x> * 2] (starting X diameter)
 #<starting_z> = #<_z>        (starting Z)
