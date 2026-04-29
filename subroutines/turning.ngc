@@ -16,8 +16,13 @@ o<turning> sub
 
         o100 if [#<turning_tool> NE #<_current_tool>]
              (MSG,ERROR : Set tool before use macro)
-        o100 return [-2]
+             o100 return [-2]
         o100 endif
+
+        o105 if [#<turning_doc> LE 0]
+             (MSG,ERROR: Depth of cut must be greater than zero)
+             o105 return [-2]
+        o105 endif
 
 G7  ; Diameter mode
 G18 ; XZ Plane
