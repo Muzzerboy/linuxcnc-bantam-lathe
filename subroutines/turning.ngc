@@ -13,6 +13,7 @@ o<turning> sub
 #<turning_tool>    = #8   (tool number)
 #<turning_coolant> = #9   (coolant: 1=on)
 #<turning_maxrpm>  = #10  (max RPM limit)
+#<turning_units>   = #11  (=21) (20=inch, 21=mm)
 
         o100 if [#<turning_tool> NE #<_current_tool>]
              (MSG,ERROR : Set tool before use macro)
@@ -26,8 +27,12 @@ o<turning> sub
 
 G7  ; Diameter mode
 G18 ; XZ Plane
-G21 ; Metric Units
 G90 ; Absolute Distance
+        o106 if [#<turning_units> EQ 21]
+             G21
+        o106 else
+             G20
+        o106 endif
 
 #<starting_x> = [#<_x> * 2] (starting X diameter)
 #<starting_z> = #<_z>        (starting Z)

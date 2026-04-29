@@ -14,6 +14,7 @@ o<drill> sub
 #<drill_doc>      = #10
 #<angles>        = 0
 #<drill_maxrpm>       = #11
+#<drilling_units>     = #12  (=21) (20=inch, 21=mm)
 
 #<starting_z> = #<_z> (starting z)
 
@@ -24,7 +25,11 @@ o<drill> sub
 
 G7  ; diameter mode
 G17 ; XY Plane
-G21 ; Metric Units
+        o106 if [#<drilling_units> EQ 21]
+             G21
+        o106 else
+             G20
+        o106 endif
 G90 ; Absolute Distance
 G91.1 ; but not for arcs
 

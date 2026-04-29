@@ -13,6 +13,7 @@ o<boring> sub
 #<boring_tool>    = #8   (tool number)
 #<boring_coolant> = #9   (coolant: 1=on)
 #<boring_maxrpm>  = #10  (max RPM limit)
+#<boring_units>   = #11  (=21) (20=inch, 21=mm)
 
         o100 if [#<boring_tool> NE #<_current_tool>]
              (MSG,ERROR : Set tool before use macro)
@@ -26,8 +27,12 @@ o<boring> sub
 
 G7  ; Diameter mode
 G18 ; XZ Plane
-G21 ; Metric Units
 G90 ; Absolute Distance
+        o106 if [#<boring_units> EQ 21]
+             G21
+        o106 else
+             G20
+        o106 endif
 
 #<starting_x> = [#<_x> * 2] (starting bore diameter - tool at current bore wall)
 #<starting_z> = #<_z>        (starting Z)

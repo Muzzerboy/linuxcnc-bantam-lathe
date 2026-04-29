@@ -13,7 +13,8 @@ o<chamfer> sub
 #<chamfer_interior>       = #8   ;will be cut if > 0
 #<chamfer_exterior_rear>  = #9   ;will be cut if > 0
 #<chamfer_coolant>        = #10
-#<chamfer_maxrpm>       = #11
+#<chamfer_maxrpm>         = #11
+#<chamfer_units>          = #12  (=21) (20=inch, 21=mm)
 
 
         o100 if [#<chamfer_tool> NE #<_current_tool>]
@@ -28,8 +29,12 @@ o<chamfer> sub
 
 G8  ; Lathe radius Mode
 G18 ; XZ Plane
-G21 ; Metric Units
 G90 ; Absolute Distance
+        o106 if [#<chamfer_units> EQ 21]
+             G21
+        o106 else
+             G20
+        o106 endif
 
 
 #<chamfer_x> = [#<chamfer_x> / 2] ; because of radius mode
