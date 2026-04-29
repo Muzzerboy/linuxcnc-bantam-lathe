@@ -150,13 +150,42 @@ FILE: hallib/probe_basic_lathe_postgui.hal
        scale_to_rpm.0.out  ->  scale_to_rpm.out
        REASON: Matching the names= syntax fix made in Bantam_v1.hal.
 
-SYSTEM FILE (outside config directory)
+SYSTEM FILES (outside config directory)
 ----------------------------------------------------------------------
   /usr/lib/python3/dist-packages/probe_basic_lathe/probe_basic_lathe_ui.py
     label_5.setText(...)  ->  label_5.setText("")
     REASON: Cleared the static "5/30/2025 ACTION REQUIRED" notification.
             stdglue.py was already up to date; the notice was a baked-in
             static label with no runtime check. Will return if package updated.
+
+    Also added setValue(21) for turning_units, chamfer_units, drilling_units
+    spinboxes to default to G21 (metric). NOTE: these changes to the _ui.py
+    file have NO EFFECT -- PBL loads probe_basic_lathe.ui directly via
+    uic.loadUi(), not the compiled _ui.py.
+
+  /usr/lib/python3/dist-packages/probe_basic_lathe/probe_basic_lathe.ui
+    THIS IS THE FILE THAT ACTUALLY CONTROLS DEFAULTS.
+    PBL loads this XML file directly via uic.loadUi() at startup.
+
+    Conversational macro defaults set (23 April 2026, from Andy Pugh originals):
+      Surface speed (all turning ops):  1 or 175  ->  100 m/min
+      Surface speed (threading):        20         ->   50 RPM
+      Surface speed (drilling/tapping): 20         ->  100 / 30 m/min
+      Max RPM (all turning ops):        800        -> 2000
+      Max RPM (threading/tapping):      800        ->  200
+      Feed (turning/boring/facing etc): 0.5 or 5.0 -> 0.15 mm/rev
+      Feed (drilling):                  0.2        ->  0.05 mm/rev
+      Depth of cut (all ops):           2.0        ->  1.0 mm
+      Drill peck depth:                 5.0        ->  2.0 mm
+      Tapping pitch:                    0.5        ->  1.0 mm
+      Tapping ramp distance:            0.5        ->  5.0 mm
+      Units (turning, chamfer, drilling,
+             threads, tapping):          20 (G20)  ->   21 (G21)
+
+    NOTE: boring_ss and facing_ss were already 175 in the original .ui;
+          changed to 100 to match Andy Pugh's gmoccapy defaults.
+    NOTE: All changes will be LOST if the probe_basic_lathe package is
+          updated via apt. Re-run the sudo python3 script to reapply.
 
 ================================================================================
 SIMULATION FILES ARCHIVED (moved to archive/hallib/)
