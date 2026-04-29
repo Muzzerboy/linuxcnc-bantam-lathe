@@ -42,3 +42,7 @@ settings:
 
   backplot.perspective-view:
     default_value: false
+
+  # Conversational macro defaults (Andy Pugh originals)
+  turning.feed:
+    default_value: 0.15
