@@ -74,7 +74,7 @@ G4P1          ; Wait to reach speed
              G1 x#<starting_X>
              G0 z#<starting_Z>
         o200 elseif [#<chamfer_exterior_rear> GT 0] ; back outside
-             o203 while [[#<temp> + #<chamfer_doc> ] lt <chamfer_exterior_rear>]
+             o203 while [[#<temp> + #<chamfer_doc> ] lt #<chamfer_exterior_rear>]
                   #<temp> = [#<temp> + #<chamfer_doc> ]
                   G0 x[#<chamfer_x> - #<temp>] z#<starting_Z>
                   G1 z#<chamfer_z>
@@ -84,9 +84,9 @@ G4P1          ; Wait to reach speed
              o203 endwhile
 
              G0 x#<starting_X> z#<starting_Z>
-             G0 x[#<chamfer_x> - <chamfer_exterior_rear>]
+             G0 x[#<chamfer_x> - #<chamfer_exterior_rear>]
              G1 z#<chamfer_z>
-             G1 x#<chamfer_x> z[#<chamfer_z> + <chamfer_exterior_rear> ]
+             G1 x#<chamfer_x> z[#<chamfer_z> + #<chamfer_exterior_rear>]
              G1 x#<starting_X>
              G0 z#<starting_Z>
         o200 endif

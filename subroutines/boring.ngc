@@ -1,0 +1,64 @@
+;Boring - ID parallel boring
+o<boring> sub
+
+  o<backup_status> call
+
+#<boring_x>       = #1   (finish bore diameter)
+#<boring_ss>      = #2   (surface speed m/min)
+#<boring_doc>     = #3   (depth of cut per pass mm)
+#<boring_feed>    = #4   (feed mm/rev)
+#<boring_z>       = #5   (finish Z depth)
+#<boring_radius>  = #6   (tool nose radius - reserved)
+#<boring_angle>   = #7   (tool angle - reserved)
+#<boring_tool>    = #8   (tool number)
+#<boring_coolant> = #9   (coolant: 1=on)
+#<boring_maxrpm>  = #10  (max RPM limit)
+
+        o100 if [#<boring_tool> NE #<_current_tool>]
+             (MSG,ERROR : Set tool before use macro)
+        o100 return [-2]
+        o100 endif
+
+G7  ; Diameter mode
+G18 ; XZ Plane
+G21 ; Metric Units
+G90 ; Absolute Distance
+
+#<starting_x> = [#<_x> * 2] (starting bore diameter - tool at current bore wall)
+#<starting_z> = #<_z>        (starting Z)
+
+G96 D#<boring_maxrpm> S#<boring_ss>
+M3
+G95 F#<boring_feed>
+
+        o110 if [#<boring_coolant>]
+                M8
+        o110 endif
+
+G4 P1
+
+(DEBUG, ID Boring: start dia=#<starting_x> finish dia=#<boring_x> start Z=#<starting_z> finish Z=#<boring_z> DOC=#<boring_doc>)
+
+        o200 while [#<starting_x> LT [#<boring_x> - #<boring_doc>]]
+             #<starting_x> = [#<starting_x> + #<boring_doc>]
+             G1 X#<starting_x>
+             G1 Z#<boring_z>
+             G0 X[#<starting_x> - #<boring_doc>]
+             G0 Z#<starting_z>
+             G0 X#<starting_x>
+        o200 endwhile
+
+        G1 X#<boring_x>
+        G1 Z#<boring_z>
+        G0 X[#<boring_x> - #<boring_doc>]
+        G0 Z#<starting_z>
+        G0 X#<boring_x>  ; For touch-off
+
+M5
+M9
+
+  o<backup_restore> call
+
+o<boring> endsub
+M2
+%

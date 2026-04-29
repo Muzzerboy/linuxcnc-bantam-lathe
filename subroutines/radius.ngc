@@ -64,7 +64,7 @@ G4P1          ; Wait to reach speed
                   G2 x#<radius_x> z[#<radius_z> - #<temp>] K[-#<temp>]
                   G1 x#<starting_X>
                   G0 z#<starting_Z>
-             o202endwhile
+             o202 endwhile
 
              G0 x#<starting_X> z#<starting_Z>
              G0 x[#<radius_x> + #<radius_interior>]
@@ -72,23 +72,23 @@ G4P1          ; Wait to reach speed
              G2 x#<radius_x> z[#<radius_z> - #<radius_interior>] K[-#<radius_interior>]
              G1 x#<starting_X>
              G0 z#<starting_Z>
-        o300 elseif [#<radius_exterior_rear> GT 0.5] ; back outside
-             o301 while [[#<temp> + #<radius_doc>] lt #<radius_exterior_rear>]
+        o200 elseif [#<radius_exterior_rear> GT 0.5] ; back outside
+             o203 while [[#<temp> + #<radius_doc>] lt #<radius_exterior_rear>]
                   #<temp> = [#<temp> + #<radius_doc>]
                   G0 x[#<radius_x> - #<temp>] z#<starting_Z>
                   G1 z#<radius_z>
                   G2 x#<radius_x> z[#<radius_z> + #<temp>] K#<temp>
                   G1 x#<starting_X>
                   G0 z#<starting_Z>
-             o301 endwhile
+             o203 endwhile
 
              G0 x#<starting_X> z#<starting_Z>
-             G0 x[#<radius_x> - #<radius_size>]
+             G0 x[#<radius_x> - #<radius_exterior_rear>]
              G1 z#<radius_z>
              G2 x#<radius_x> z[#<radius_z> + #<radius_exterior_rear>] K#<radius_exterior_rear>
              G1 x#<starting_X>
              G0 z#<starting_Z>
-        o300 endif
+        o200 endif
 
 M5
 M9
