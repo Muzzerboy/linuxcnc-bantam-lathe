@@ -11,7 +11,6 @@ G64P0.001 G97 G99 M5 M9
 
 o1 if [EXISTS [#<_backup_metric>]]
 
-     (DEBUG,RESTORE MODAL STATUS USING _BACKUP_VAR)
 
      o10 if [#<_backup_metric> NE #<_metric>]
       o11 if [#<_backup_metric>]
@@ -143,7 +142,6 @@ o1 if [EXISTS [#<_backup_metric>]]
 
 o1 else
 
-     (DEBUG,RESTORE MODAL STATUS USING FIXED VALUE)
 
     ; FULL STATRUP LIST FROM CONFIG
     ;G7 G18 G21 G40 G49 G54 G64P0.001 G80 G90 G90.1 G92.1 G94 G97 G99 M5 M9 M53
