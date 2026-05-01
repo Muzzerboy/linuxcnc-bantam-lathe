@@ -1,54 +1,57 @@
-;tapping
+;tapping - floating tap holder approach
+; G33.1 rigid tapping is not used because it requires a servo spindle.
+; With a VFD-controlled spindle, use G95 F=pitch (feed per rev = pitch)
+; so one spindle revolution = one pitch of Z travel. A floating tap
+; holder compensates for any small timing differences on reversal.
 o<tapping> sub
 
-;  o<backup_status> call
+  o<backup_status> call
 
-#<tapping_diam>     = #1
-#<tapping_z>        = #2
-#<tapping_ss>       = #3
-#<tapping_pitch>    = #4
-#<tapping_tool>     = #5
-#<tapping_coolant>  = #6
-#<tapping_rampdistance>   = #7
+#<tapping_diam>         = #1
+#<tapping_z>            = #2
+#<tapping_ss>           = #3
+#<tapping_pitch>        = #4
+#<tapping_tool>         = #5
+#<tapping_coolant>      = #6
+#<tapping_rampdistance> = #7
 
 #<starting_Z> = #<_z> (starting Z)
 
         o100 if [#<tapping_tool> NE #<_current_tool>]
              (MSG,ERROR : Set tool before use macro)
-        o100 return [-2] ; indicate failure to epilog
+             o100 return [-2]
         o100 endif
 
-G7  ; diameter mode
-G17 ; XY Plane
+G7  ; Diameter mode
+G18 ; XZ Plane
 G21 ; Metric Units
 G90 ; Absolute Distance
-G91.1 ; but not for arcs
 
-#<speed_calc> = [[1000 * #<tapping_ss>] / [3.1415 * #<tapping_diam>]] ; metric mode RPM
+#<speed_calc> = [[1000 * #<tapping_ss>] / [3.1415 * #<tapping_diam>]]
 
-G97 S#<speed_calc> ; Constant RPM mode
-G97 S500
-M3                 ; Start Spindle
-G4 P1              ; Wait to reach speed
+(DEBUG,Tapping dia-#<tapping_diam> depth-#<tapping_z> ss-#<tapping_ss> pitch-#<tapping_pitch> tool-#<tapping_tool> rpm-#<speed_calc> startZ-#<starting_Z>)
+
+G97 S#<speed_calc>
+M3
+G4 P1
 
         o110 if [#<tapping_coolant>]
                 M8
         o110 endif
 
-(DEBUG,Tapping dia-#<tapping_diam> depth-#<tapping_z> asked-speed-#<tapping_speed> pitch-#<tapping_pitch> tool-#<tool_number> calculated-rpm-#<speed_calc> start-Z-#<starting_Z>)
+G95 F#<tapping_pitch>   ; feed per rev = pitch -- one rev = one pitch of travel
 
-#<new_z> = [#<tapping_z> + #<tapping_rampdistance>] ; taking care of spindle ramp distance 
-
-G98
-G0 X0 ; must drill from the centerline.  Tool should be zeroed here
-G33.1 Z#<new_z> K#<tapping_pitch>
-G80
-
-M5
+G0 X0                   ; move to centreline (tool should be zeroed on axis)
+G1 Z#<tapping_z>        ; tap to depth
+G4 P0.3                 ; brief dwell at bottom
+M4                      ; reverse spindle
+G4 P0.5                 ; wait for reversal
+G1 Z#<starting_Z>       ; retract (floating holder compensates)
+G4 P0.3
+M5                      ; stop spindle
 M9
 
-;  o<backup_restore> call     ; restore g20/21, g90/g91, feedrate cuter-comp and other using now global _backup_var
-
+  o<backup_restore> call
 
 o<tapping> endsub
 
