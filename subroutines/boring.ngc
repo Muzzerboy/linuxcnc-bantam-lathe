@@ -43,7 +43,6 @@ G95 F#<boring_feed>
 
 G4 P1
 
-(DEBUG, ID Boring: start dia=#<starting_x> finish dia=#<boring_x> start Z=#<starting_z> finish Z=#<boring_z> DOC=#<boring_doc>)
 
         o200 while [#<starting_x> LT [#<boring_x> - #<boring_doc>]]
              #<starting_x> = [#<starting_x> + #<boring_doc>]

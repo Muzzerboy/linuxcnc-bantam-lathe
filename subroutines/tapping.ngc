@@ -29,7 +29,6 @@ G90 ; Absolute Distance
 
 #<speed_calc> = [[1000 * #<tapping_ss>] / [3.1415 * #<tapping_diam>]]
 
-(DEBUG,Tapping dia-#<tapping_diam> depth-#<tapping_z> ss-#<tapping_ss> pitch-#<tapping_pitch> tool-#<tapping_tool> rpm-#<speed_calc> startZ-#<starting_Z>)
 
 G97 S#<speed_calc>
 M3

@@ -40,7 +40,6 @@ G4 P1              ; Wait to reach speed
                 M8
         o110 endif
 
-(DEBUG,Drilling dia-#<drill_diam> depth-#<drill_depth> asked-speed-#<drill_ss> feed/rpm-#<drill_feed> tool-#<tool_number> peck dist-#<drill_peck> full retract calculated-rpm-#<speed_calc> start-z-#<starting_z>)
 
 G98
 G0 X0 ; must drill from the centerline.  Tool should be zeroed here

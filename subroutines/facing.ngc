@@ -45,7 +45,6 @@ G4P1              ; Wait to reach speed
                 M8
         o110 endif
 
-(DEBUG,facing finish rad-#<facing_x> start rad-#<starting_X> start length-#<starting_Z> finish length-#<facing_z>)
 
         o200 while [#<starting_Z> GT #<facing_z>+ #<facing_doc>]
              #<starting_Z>=[#<starting_Z>-#<facing_doc>]
