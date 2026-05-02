@@ -10,7 +10,7 @@ loadrt hostmot2
 loadrt hm2_pci config=" num_encoders=4 num_pwmgens=0 num_stepgens=2 sserial_port_0=00xxxx"
 setp    hm2_5i25.0.watchdog.timeout_ns 5000000
 loadrt pid names=pid.x,pid.z,pid.s
-loadrt scale names=scale_to_rpm,x_to_diam,x_to_diam_rel
+loadrt scale names=scale_to_rpm
 
 addf hm2_5i25.0.read          servo-thread
 addf motion-command-handler   servo-thread
@@ -19,8 +19,6 @@ addf pid.x.do-pid-calcs       servo-thread
 addf pid.z.do-pid-calcs       servo-thread
 addf pid.s.do-pid-calcs       servo-thread
 addf scale_to_rpm              servo-thread
-addf x_to_diam                 servo-thread
-addf x_to_diam_rel             servo-thread
 addf hm2_5i25.0.write         servo-thread
 
 setp hm2_5i25.0.dpll.01.timer-us -50
@@ -189,9 +187,6 @@ net vfd-fault                  <=  hm2_5i25.0.7i76.0.0.input-04
 setp scale_to_rpm.gain 60
 net spindle-vel-fb-rps => scale_to_rpm.in
 
-# X axis radius -> diameter conversion for pendant display
-setp x_to_diam.gain 2
-setp x_to_diam_rel.gain 2
 
 #******************************
 # connect miscellaneous signals

@@ -134,12 +134,10 @@ net pdnt.feed-override.decrease           whb.halui.feed-override.decrease      
 
 
 # axis position related signals feedback
-net pdnt.axis.x.pos-feedback              halui.axis.x.pos-feedback             x_to_diam.in
-net x-pos-diam                            x_to_diam.out                         whb.halui.axis.x.pos-feedback
+net pdnt.axis.x.pos-feedback              halui.axis.x.pos-feedback             whb.halui.axis.x.pos-feedback
 net pdnt.axis.z.pos-feedback              halui.axis.z.pos-feedback             whb.halui.axis.z.pos-feedback
 
 
 # axis position related signals relative
-net pdnt.axis.x.pos-relative              halui.axis.x.pos-relative             x_to_diam_rel.in
-net x-pos-rel-diam                        x_to_diam_rel.out                     whb.halui.axis.x.pos-relative
+net pdnt.axis.x.pos-relative              halui.axis.x.pos-relative             whb.halui.axis.x.pos-relative
 net pdnt.axis.z.pos-relative              halui.axis.z.pos-relative             whb.halui.axis.z.pos-relative
