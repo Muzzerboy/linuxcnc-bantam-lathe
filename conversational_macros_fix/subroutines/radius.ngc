@@ -1,0 +1,123 @@
+;radius
+o<radius> sub
+
+  o<backup_status> call
+
+#<radius_x>              = #1
+#<radius_ss>             = #2
+#<radius_feed>           = #3
+#<radius_doc>            = #4  ;depth of cut per pass
+#<radius_z>              = #5
+#<radius_tool>           = #6
+#<radius_exterior_front> = #8  ;cut if greater than 0
+#<radius_interior>       = #9  ;cut if greater than 0
+#<radius_exterior_rear>  = #10 ;cut if greater than 0
+#<radius_coolant>        = #11
+#<radius_maxrpm>         = #12
+
+        o100 if [#<radius_tool> NE #<_current_tool>]
+             (MSG,ERROR : Set tool before use macro)
+             o100 return [-2]
+        o100 endif
+
+        o105 if [#<radius_doc> LE 0]
+             (MSG,ERROR: Depth of cut must be greater than zero)
+             o105 return [-2]
+        o105 endif
+
+G8  ; Lathe radius mode (X coordinates are radii)
+G18 ; XZ Plane
+G21 ; Metric Units
+G90 ; Absolute Distance
+G91.1 ; Arc offsets (I,K) are incremental from arc start
+
+#<radius_x>   = [#<radius_x> / 2]  ; widget inputs diameter -- convert to radius for G8
+#<starting_X> = #<_x>               (starting X radius)
+#<starting_Z> = #<_z>               (starting Z)
+
+G96 D#<radius_maxrpm> S#<radius_ss>
+M3
+G95 F#<radius_feed>
+G4 P1
+
+        o110 if [#<radius_coolant>]
+                M8
+        o110 endif
+
+; -----------------------------------------------------------------------
+; Arc centre is always at the CORNER POINT (radius_x, radius_z).
+; For each step of depth #<temp>:
+;   Front outside: start (radius_x-temp, radius_z), end (radius_x, radius_z-temp)
+;                  centre offset I=+temp  K=0  --> G3
+;   Front inside:  start (radius_x+temp, radius_z), end (radius_x, radius_z-temp)
+;                  centre offset I=-temp  K=0  --> G2
+;   Rear  outside: start (radius_x-temp, radius_z), end (radius_x, radius_z+temp)
+;                  centre offset I=+temp  K=0  --> G2
+; -----------------------------------------------------------------------
+
+#<temp> = 0
+        o200 if [#<radius_exterior_front> GT 0] ; Front outside
+
+             o201 while [[#<temp> + #<radius_doc>] LT #<radius_exterior_front>]
+                  #<temp> = [#<temp> + #<radius_doc>]
+                  G0 X[#<radius_x> - #<temp>] Z#<starting_Z>
+                  G1 Z#<radius_z>
+                  G3 X#<radius_x> Z[#<radius_z> - #<temp>] I#<temp> K0
+                  G1 X#<starting_X>
+                  G0 Z#<starting_Z>
+             o201 endwhile
+
+             G0 X#<starting_X> Z#<starting_Z>
+             G0 X[#<radius_x> - #<radius_exterior_front>]
+             G1 Z#<radius_z>
+             G3 X#<radius_x> Z[#<radius_z> - #<radius_exterior_front>] I#<radius_exterior_front> K0
+             G1 X#<starting_X>
+             G0 Z#<starting_Z>
+
+        o200 elseif [#<radius_interior> GT 0] ; Front inside (bore corner)
+
+             o202 while [[#<temp> + #<radius_doc>] LT #<radius_interior>]
+                  #<temp> = [#<temp> + #<radius_doc>]
+                  G0 X[#<radius_x> + #<temp>] Z#<starting_Z>
+                  G1 Z#<radius_z>
+                  G2 X#<radius_x> Z[#<radius_z> - #<temp>] I[-#<temp>] K0
+                  G1 X#<starting_X>
+                  G0 Z#<starting_Z>
+             o202 endwhile
+
+             G0 X#<starting_X> Z#<starting_Z>
+             G0 X[#<radius_x> + #<radius_interior>]
+             G1 Z#<radius_z>
+             G2 X#<radius_x> Z[#<radius_z> - #<radius_interior>] I[-#<radius_interior>] K0
+             G1 X#<starting_X>
+             G0 Z#<starting_Z>
+
+        o200 elseif [#<radius_exterior_rear> GT 0] ; Rear outside
+
+             o203 while [[#<temp> + #<radius_doc>] LT #<radius_exterior_rear>]
+                  #<temp> = [#<temp> + #<radius_doc>]
+                  G0 X[#<radius_x> - #<temp>] Z#<starting_Z>
+                  G1 Z#<radius_z>
+                  G2 X#<radius_x> Z[#<radius_z> + #<temp>] I#<temp> K0
+                  G1 X#<starting_X>
+                  G0 Z#<starting_Z>
+             o203 endwhile
+
+             G0 X#<starting_X> Z#<starting_Z>
+             G0 X[#<radius_x> - #<radius_exterior_rear>]
+             G1 Z#<radius_z>
+             G2 X#<radius_x> Z[#<radius_z> + #<radius_exterior_rear>] I#<radius_exterior_rear> K0
+             G1 X#<starting_X>
+             G0 Z#<starting_Z>
+
+        o200 endif
+
+M5
+M9
+
+  o<backup_restore> call
+
+o<radius> endsub
+
+M2
+%

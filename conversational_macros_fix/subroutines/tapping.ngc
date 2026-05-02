@@ -1,0 +1,56 @@
+;tapping - G33 spindle-synchronized tapping
+; G33 reads the spindle encoder and moves Z in sync with rotation.
+; Unlike G33.1 it does not require closed-loop spindle control, so it
+; works with a VFD spindle that has encoder feedback.
+; Tap forward with M3, then M4 to reverse, then G33 again to retract.
+o<tapping> sub
+
+  o<backup_status> call
+
+#<tapping_diam>         = #1
+#<tapping_z>            = #2
+#<tapping_ss>           = #3
+#<tapping_pitch>        = #4
+#<tapping_tool>         = #5
+#<tapping_coolant>      = #6
+#<tapping_rampdistance> = #7
+
+#<starting_Z> = #<_z> (starting Z)
+
+        o100 if [#<tapping_tool> NE #<_current_tool>]
+             (MSG,ERROR : Set tool before use macro)
+             o100 return [-2]
+        o100 endif
+
+G7  ; Diameter mode
+G18 ; XZ Plane
+G21 ; Metric Units
+G90 ; Absolute Distance
+
+#<speed_calc> = [[1000 * #<tapping_ss>] / [3.1415 * #<tapping_diam>]]
+
+
+G97 S#<speed_calc>
+M3
+G4 P1
+
+        o110 if [#<tapping_coolant>]
+                M8
+        o110 endif
+
+G0 X0                                  ; move to centreline
+G33 Z#<tapping_z> K#<tapping_pitch>   ; tap to depth -- Z follows encoder
+G4 P0.3                                ; dwell at bottom
+M4                                     ; reverse spindle
+G4 P0.5                                ; wait for spindle to start reversing
+G33 Z#<starting_Z> K#<tapping_pitch>  ; retract synchronized with reversed spindle
+G4 P0.3
+M5                                     ; stop spindle
+M9
+
+  o<backup_restore> call
+
+o<tapping> endsub
+
+M2
+%
