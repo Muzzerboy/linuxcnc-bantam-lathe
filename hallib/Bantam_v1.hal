@@ -189,7 +189,7 @@ net vfd-fault                  <=  hm2_5i25.0.7i76.0.0.input-04
 setp scale_to_rpm.gain 60
 net spindle-vel-fb-rps => scale_to_rpm.in
 
-; X axis radius -> diameter conversion for pendant display
+# X axis radius -> diameter conversion for pendant display
 setp x_to_diam.gain 2
 setp x_to_diam_rel.gain 2
 
