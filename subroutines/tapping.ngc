@@ -1,8 +1,8 @@
-;tapping - floating tap holder approach
-; G33.1 rigid tapping is not used because it requires a servo spindle.
-; With a VFD-controlled spindle, use G95 F=pitch (feed per rev = pitch)
-; so one spindle revolution = one pitch of Z travel. A floating tap
-; holder compensates for any small timing differences on reversal.
+;tapping - G33 spindle-synchronized tapping
+; G33 reads the spindle encoder and moves Z in sync with rotation.
+; Unlike G33.1 it does not require closed-loop spindle control, so it
+; works with a VFD spindle that has encoder feedback.
+; Tap forward with M3, then M4 to reverse, then G33 again to retract.
 o<tapping> sub
 
   o<backup_status> call
@@ -39,16 +39,14 @@ G4 P1
                 M8
         o110 endif
 
-G95 F#<tapping_pitch>   ; feed per rev = pitch -- one rev = one pitch of travel
-
-G0 X0                   ; move to centreline (tool should be zeroed on axis)
-G1 Z#<tapping_z>        ; tap to depth
-G4 P0.3                 ; brief dwell at bottom
-M4                      ; reverse spindle
-G4 P0.5                 ; wait for reversal
-G1 Z#<starting_Z>       ; retract (floating holder compensates)
+G0 X0                                  ; move to centreline
+G33 Z#<tapping_z> K#<tapping_pitch>   ; tap to depth -- Z follows encoder
+G4 P0.3                                ; dwell at bottom
+M4                                     ; reverse spindle
+G4 P0.5                                ; wait for spindle to start reversing
+G33 Z#<starting_Z> K#<tapping_pitch>  ; retract synchronized with reversed spindle
 G4 P0.3
-M5                      ; stop spindle
+M5                                     ; stop spindle
 M9
 
   o<backup_restore> call
