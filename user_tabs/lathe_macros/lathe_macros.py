@@ -17,7 +17,7 @@ import json
 import linuxcnc
 
 from qtpy.QtWidgets import (
-    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QSplitter,
+    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QDialog, QButtonGroup,
     QRadioButton, QFrame, QScrollArea, QSizePolicy)
 from qtpy.QtCore import Qt, QRectF, QPointF
@@ -378,15 +378,13 @@ class OpPage(QWidget):
     def _build(self, layer_idx, field_defs):
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        self.splitter = QSplitter(Qt.Horizontal)
-        splitter = self.splitter
-
-        # Left: SVG diagram
+        # Left: SVG diagram — fixed at 31% stretch
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        splitter.addWidget(self.diagram)
+        outer.addWidget(self.diagram, 31)
 
-        # Right: fields + run button
+        # Right: fields + run button — 69% stretch
         right = QWidget()
         right.setStyleSheet('background: #2a2a2a;')
         rl = QVBoxLayout(right)
@@ -410,9 +408,7 @@ class OpPage(QWidget):
         run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        splitter.addWidget(right)
-        splitter.setSizes([310, 690])
-        outer.addWidget(splitter)
+        outer.addWidget(right, 69)
 
     def _run(self):
         try:
@@ -450,10 +446,10 @@ class RadioOpPage(OpPage):
     def _build(self, layer_idx, field_defs):
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        splitter = QSplitter(Qt.Horizontal)
+        outer.setSpacing(0)
 
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        splitter.addWidget(self.diagram)
+        outer.addWidget(self.diagram, 31)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
         rl = QVBoxLayout(right)
@@ -484,9 +480,7 @@ class RadioOpPage(OpPage):
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        splitter.addWidget(right)
-        splitter.setSizes([310, 690])
-        outer.addWidget(splitter)
+        outer.addWidget(right, 69)
 
     def selected_radio(self):
         for key, rb in self.radios.items():
@@ -531,11 +525,10 @@ class ThreadingPage(OpPage):
     def _build(self, layer_idx, field_defs):
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        self.splitter = QSplitter(Qt.Horizontal)
-        splitter = self.splitter
+        outer.setSpacing(0)
 
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        splitter.addWidget(self.diagram)
+        outer.addWidget(self.diagram, 31)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
         rl = QVBoxLayout(right)
@@ -558,9 +551,7 @@ class ThreadingPage(OpPage):
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        splitter.addWidget(right)
-        splitter.setSizes([310, 690])
-        outer.addWidget(splitter)
+        outer.addWidget(right, 69)
 
     def _call(self, f):
         tid = 1.0 if self.rb_int.isChecked() else 0.0
@@ -758,20 +749,6 @@ class UserTab(QWidget):
         ], _tapping_call, 'Tapping')
 
         self.tabs = tabs
-
-        # Keep all splitters in sync — dragging one updates all others
-        self._splitters = [p.splitter for p in self.pages.values()
-                           if hasattr(p, 'splitter')]
-        for s in self._splitters:
-            s.splitterMoved.connect(self._sync_splitters)
-
-    def _sync_splitters(self, pos, index):
-        sizes = self.sender().sizes()
-        for s in self._splitters:
-            if s is not self.sender():
-                s.blockSignals(True)
-                s.setSizes(sizes)
-                s.blockSignals(False)
 
     def _load_state(self):
         try:
