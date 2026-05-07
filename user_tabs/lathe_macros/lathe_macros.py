@@ -14,15 +14,13 @@ Operations: Turning, Boring, Facing, Chamfer, Radius,
 
 import os
 import json
-import xml.etree.ElementTree as ET
-from io import BytesIO
 import linuxcnc
 
 from qtpy.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QLabel, QLineEdit, QPushButton, QDialog, QButtonGroup,
     QRadioButton, QFrame, QScrollArea, QSizePolicy)
-from qtpy.QtCore import Qt, QByteArray, QRectF
+from qtpy.QtCore import Qt, QRectF
 from qtpy.QtGui import QPainter
 
 try:
@@ -105,66 +103,35 @@ QPushButton#can  { background: #5a1a1a; font-size: 16pt; min-height: 50px; }
 # SVG diagram panel
 # ---------------------------------------------------------------------------
 
-def _layer_svg_bytes(layer_idx):
-    """Return SVG as bytes with only the given layer visible."""
-    if not os.path.exists(SVG_FILE):
-        return None
-    try:
-        ET.register_namespace('', 'http://www.w3.org/2000/svg')
-        ET.register_namespace('xlink', 'http://www.w3.org/1999/xlink')
-        ET.register_namespace('inkscape', 'http://www.inkscape.org/namespaces/inkscape')
-        ET.register_namespace('sodipodi', 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.0.dtd')
-        ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
-        ET.register_namespace('cc', 'http://creativecommons.org/ns#')
-        ET.register_namespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-        tree = ET.parse(SVG_FILE)
-        root = tree.getroot()
-        target_id = f'layer{layer_idx}'
-        for g in root.iter('{http://www.w3.org/2000/svg}g'):
-            gid = g.get('id', '')
-            if gid.startswith('layer'):
-                style = g.get('style', '')
-                if gid == target_id:
-                    # Make visible
-                    style = style.replace('display:none', 'display:inline')
-                    if 'display' not in style:
-                        style = 'display:inline;' + style
-                else:
-                    # Hide
-                    if 'display:none' not in style:
-                        style = 'display:none;' + style
-                g.set('style', style)
-        buf = BytesIO()
-        tree.write(buf, encoding='unicode', xml_declaration=True)
-        return buf.getvalue().encode('utf-8')
-    except Exception:
-        return None
-
-
 class DiagramWidget(QWidget):
-    """Renders one layer of Andy Pugh's LatheMacro.svg."""
+    """Renders one layer of Andy Pugh's LatheMacro.svg using element-ID rendering."""
+
+    # One shared renderer for all instances (load SVG once)
+    _shared_renderer = None
 
     def __init__(self, layer_idx, parent=None):
         super().__init__(parent)
-        self._renderer = None
+        self._layer_id = f'layer{layer_idx}'
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setStyleSheet('background: #1a1a2a;')
-        if HAS_SVG:
-            data = _layer_svg_bytes(layer_idx)
-            if data:
-                self._renderer = QSvgRenderer(QByteArray(data))
+        self.setStyleSheet('background: #111;')
+        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(event.rect(), Qt.black)
-        if self._renderer and self._renderer.isValid():
-            margin = 10
+        r = DiagramWidget._shared_renderer
+        if r and r.isValid():
+            margin = 16
             rect = QRectF(margin, margin,
-                          self.width() - 2*margin,
+                          self.width()  - 2*margin,
                           self.height() - 2*margin)
-            self._renderer.render(painter, rect)
+            if r.elementExists(self._layer_id):
+                r.render(painter, self._layer_id, rect)
+            else:
+                r.render(painter, rect)
         else:
             painter.setPen(Qt.gray)
             painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
