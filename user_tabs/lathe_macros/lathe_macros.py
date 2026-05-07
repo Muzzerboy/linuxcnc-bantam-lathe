@@ -60,12 +60,19 @@ def _build_transparent_svg():
 
     txt = open(SVG_FILE, encoding='utf-8').read()
 
+    from PIL import ImageFilter
+
     def fix_png(m):
         try:
             raw = base64.b64decode(m.group(1))
             img = Image.open(io.BytesIO(raw)).convert('LA')
             arr = np.array(img)
-            arr[:, :, 1] = np.where(arr[:, :, 0] == 0, 0, 255).astype(np.uint8)
+            # Hard alpha boundary, then feather the silhouette edge
+            alpha = np.where(arr[:, :, 0] == 0,
+                             np.uint8(0), np.uint8(255))
+            alpha_feathered = np.array(
+                Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(radius=4)))
+            arr[:, :, 1] = alpha_feathered
             buf = io.BytesIO()
             Image.fromarray(arr, mode='LA').save(buf, 'PNG')
             return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
@@ -260,6 +267,7 @@ class DiagramWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
         BG = QColor('#c8c8c8')
         painter.fillRect(event.rect(), BG)
