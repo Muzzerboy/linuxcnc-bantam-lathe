@@ -404,7 +404,7 @@ class OpPage(QWidget):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([500, 400])
+        splitter.setSizes([350, 580])
         outer.addWidget(splitter)
 
     def _run(self):
@@ -478,7 +478,7 @@ class RadioOpPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([500, 400])
+        splitter.setSizes([350, 580])
         outer.addWidget(splitter)
 
     def selected_radio(self):
@@ -551,7 +551,7 @@ class ThreadingPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([500, 400])
+        splitter.setSizes([350, 580])
         outer.addWidget(splitter)
 
     def _call(self, f):
@@ -574,17 +574,17 @@ class ThreadingPage(OpPage):
 
 def _turn_call(f):
     return (f"O<turning> call [{f['x']}] [{f['ss']}] [{f['doc']}] "
-            f"[{f['feed']}] [{f['z']}] [0] [0] "
+            f"[{f['feed']}] [{f['z']}] [{f.get('radius', 0)}] [{f.get('angle', 0)}] "
             f"[{f['tool']}] [{f['coolant']}] [{f['maxrpm']}]")
 
 def _bore_call(f):
     return (f"O<boring> call [{f['x']}] [{f['ss']}] [{f['doc']}] "
-            f"[{f['feed']}] [{f['z']}] [0] [0] "
+            f"[{f['feed']}] [{f['z']}] [{f.get('radius', 0)}] [{f.get('angle', 0)}] "
             f"[{f['tool']}] [{f['coolant']}] [{f['maxrpm']}]")
 
 def _face_call(f):
     return (f"O<facing> call [{f['ss']}] [{f['maxrpm']}] [{f['feed']}] "
-            f"[{f['doc']}] [{f['tool']}] [{f['coolant']}] [0] "
+            f"[{f['doc']}] [{f['tool']}] [{f['coolant']}] [{f.get('angle', 0)}] "
             f"[{f['x']}] [{f['z']}]")
 
 def _chamfer_call(page):
@@ -648,6 +648,8 @@ class UserTab(QWidget):
         add('turning', LAYER['turning'], [
             ('x',      'Finish Diameter',    'Target OD at end of cut',            'mm',    15.0, 'length'),
             ('z',      'Finish Z',           'Z coordinate of cut end',            'mm',     0.0, 'length'),
+            ('radius', 'End Radius',         'Nose radius at end of cut (0=none)', 'mm',     0.0, 'length'),
+            ('angle',  'Taper Angle',        'Taper angle in degrees (0=straight)','deg',    0.0, 'length'),
             ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
             ('maxrpm', 'Max RPM',            'RPM limit (G96 D parameter)',        'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per spindle revolution',        'mm/rev', 0.15,'feed'),
@@ -659,6 +661,8 @@ class UserTab(QWidget):
         add('boring', LAYER['boring'], [
             ('x',      'Finish Bore Dia',    'Target bore diameter',               'mm',     0.0, 'length'),
             ('z',      'Finish Z',           'Z coordinate of bore end',           'mm',     0.0, 'length'),
+            ('radius', 'Run-out Radius',     'Nose radius at bore end (0=none)',   'mm',     0.0, 'length'),
+            ('angle',  'Taper Angle',        'Bore taper angle in degrees (0=straight)','deg',0.0,'length'),
             ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
@@ -670,6 +674,7 @@ class UserTab(QWidget):
         add('facing', LAYER['facing'], [
             ('x',      'Finish Diameter',    'Outer diameter of face',             'mm',     0.0, 'length'),
             ('z',      'Finish Z',           'Final face Z position',              'mm',     0.0, 'length'),
+            ('angle',  'Face Angle',         'Angle from perpendicular (0=flat)',  'deg',    0.0, 'length'),
             ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
