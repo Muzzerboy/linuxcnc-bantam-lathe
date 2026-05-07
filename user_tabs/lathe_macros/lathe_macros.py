@@ -13,9 +13,6 @@ Operations: Turning, Boring, Facing, Chamfer, Radius,
 """
 
 import os
-import re
-import base64
-import io
 import json
 import linuxcnc
 
@@ -32,135 +29,73 @@ try:
 except ImportError:
     HAS_SVG = False
 
-TAB_DIR          = os.path.dirname(os.path.abspath(__file__))
-SVG_FILE         = os.path.join(TAB_DIR, 'LatheMacro.svg')
-SVG_TRANSPARENT  = os.path.join(TAB_DIR, 'LatheMacro_transparent.svg')
-STATE_FILE       = os.path.join(TAB_DIR, 'state.json')
+TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
+SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
+STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
-
-def _build_transparent_svg():
-    """
-    Pre-process LatheMacro.svg: make pure-black PNG backgrounds transparent.
-    Cached to LatheMacro_transparent.svg. Run in a background thread on first
-    use; on subsequent starts the cache is already there so this is instant.
-    """
-    if not os.path.exists(SVG_FILE):
-        return
-
-    # Already up to date
-    if (os.path.exists(SVG_TRANSPARENT) and
-            os.path.getmtime(SVG_TRANSPARENT) >= os.path.getmtime(SVG_FILE)):
-        return
-
-    try:
-        import numpy as np
-        from PIL import Image
-    except ImportError:
-        return
-
-    txt = open(SVG_FILE, encoding='utf-8').read()
-
-    from PIL import ImageFilter
-
-    def fix_png(m):
-        try:
-            raw = base64.b64decode(m.group(1))
-            img = Image.open(io.BytesIO(raw)).convert('LA')
-            arr = np.array(img)
-            # Hard alpha boundary, then feather the silhouette edge
-            alpha = np.where(arr[:, :, 0] == 0,
-                             np.uint8(0), np.uint8(255))
-            alpha_feathered = np.array(
-                Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(radius=4)))
-            arr[:, :, 1] = alpha_feathered
-            buf = io.BytesIO()
-            Image.fromarray(arr, mode='LA').save(buf, 'PNG')
-            return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
-        except Exception:
-            return m.group(0)
-
-    result = re.sub(r'data:image/png;base64,([A-Za-z0-9+/=]+)', fix_png, txt)
-    try:
-        with open(SVG_TRANSPARENT, 'w', encoding='utf-8') as f:
-            f.write(result)
-    except Exception:
-        pass
-
-
-def _svg_path():
-    """Return the best SVG path: transparent version if available, else original."""
-    if os.path.exists(SVG_TRANSPARENT):
-        return SVG_TRANSPARENT
-    return SVG_FILE
-
-
-# Kick off preprocessing in background (instant if cache exists)
-import threading
-threading.Thread(target=_build_transparent_svg, daemon=True).start()
-
-# Spinbox label positions from Andy's lathemacro.ui.
-# Coordinates are in the SVG's 1500x1000 coordinate space.
-# Format: { operation_key: [ ((svg_x, svg_y), 'Label text'), ... ] }
+# Spinbox label positions in the SVG's 888×686 coordinate space.
+# Derived from Andy Pugh's original lathemacro.ui, scaled to viewBox coords.
 LABELS = {
     'turning': [
-        ((1000, 654), 'Finish Diameter'),
-        ((635,  687), 'Feed per Rev'),
-        ((800,  230), 'End Radius'),
-        ((821,  863), 'Cut per Pass'),
-        ((125,  424), 'Finish Z'),
-        ((520,  474), 'Taper Angle'),
+        ((592, 449), 'Finish Diameter'),
+        ((376, 471), 'Feed per Rev'),
+        ((474, 158), 'End Radius'),
+        ((486, 592), 'Cut per Pass'),
+        (( 74, 291), 'Finish Z'),
+        ((308, 325), 'Taper Angle'),
     ],
     'boring': [
-        ((700,  280), 'Taper Angle'),
-        ((421,  520), 'Run-out Radius'),
-        ((1080, 616), 'Finish Diameter'),
-        ((900,  825), 'Diameter Increment'),
-        ((530,  820), 'Feed per Rev'),
-        ((273,  267), 'Finish Z'),
+        ((414, 192), 'Taper Angle'),
+        ((249, 357), 'Run-out Radius'),
+        ((639, 423), 'Finish Diameter'),
+        ((533, 566), 'Diameter Increment'),
+        ((314, 563), 'Feed per Rev'),
+        ((162, 183), 'Finish Z'),
     ],
     'facing': [
-        ((156,  404), 'Finish Z'),
-        ((1115, 626), 'Finish Diameter'),
-        ((876,  886), 'Feed per Rev'),
-        ((408,  760), 'Cut per Pass'),
-        ((1044, 364), 'Face Angle'),
+        (( 92, 277), 'Finish Z'),
+        ((660, 429), 'Finish Diameter'),
+        ((519, 608), 'Feed per Rev'),
+        ((241, 521), 'Cut per Pass'),
+        ((618, 250), 'Face Angle'),
     ],
     'radius': [
-        ((1018, 674), 'Diameter at Corner'),
-        ((202,  334), 'Z Position'),
-        ((848,  451), 'Radius Size'),
-        ((863,  629), 'Front Inside'),
-        ((763,  680), 'Front Outside'),
-        ((335,  448), 'Rear Outside'),
+        ((603, 463), 'Diameter at Corner'),
+        ((120, 229), 'Z Position'),
+        ((502, 309), 'Radius Size'),
+        ((511, 431), 'Front Inside'),
+        ((452, 467), 'Front Outside'),
+        ((198, 307), 'Rear Outside'),
     ],
     'chamfer': [
-        ((202,  334), 'Z Position'),
-        ((1112, 287), 'Chamfer Size'),
-        ((1033, 678), 'Diameter at Corner'),
-        ((335,  448), 'Rear Outside'),
-        ((763,  680), 'Front Outside'),
-        ((863,  629), 'Front Inside'),
+        ((120, 229), 'Z Position'),
+        ((658, 197), 'Chamfer Size'),
+        ((612, 465), 'Diameter at Corner'),
+        ((198, 307), 'Rear Outside'),
+        ((452, 467), 'Front Outside'),
+        ((511, 431), 'Front Inside'),
     ],
     'threading': [
-        ((268,  341), 'Finish Z'),
-        ((652,  737), 'External (OD)'),
-        ((754,  603), 'Internal (ID)'),
-        ((1010, 753), 'Thread Diameter'),
-        ((192,  616), 'Thread Pitch'),
+        ((159, 234), 'Finish Z'),
+        ((386, 505), 'External (OD)'),
+        ((447, 413), 'Internal (ID)'),
+        ((598, 517), 'Thread Diameter'),
+        ((114, 423), 'Thread Pitch'),
     ],
     'drill': [
-        ((1200, 270), 'Drill Diameter'),
-        ((260,  250), 'Drill Depth (Z)'),
-        ((770,  900), 'Feed per Rev'),
-        ((300,  711), 'Peck Distance'),
+        ((710, 185), 'Drill Diameter'),
+        ((154, 171), 'Drill Depth (Z)'),
+        ((456, 617), 'Feed per Rev'),
+        ((178, 488), 'Peck Distance'),
     ],
     'tapping': [
-        ((1084, 672), 'Tap Diameter'),
-        ((648,  864), 'Pitch / Feed'),
+        ((642, 461), 'Tap Diameter'),
+        ((384, 593), 'Pitch / Feed'),
     ],
 }
 
-# SVG layer index per operation (matches Andy's GladeVCP tab order)
+# SVG layer index per operation (Andy's original layer order, layers 0-5)
+# drill and tapping have no dedicated layer — fall back to full SVG render
 LAYER = {
     'turning':   0,
     'boring':    1,
@@ -168,8 +103,8 @@ LAYER = {
     'radius':    3,
     'chamfer':   4,
     'threading': 5,
-    'drill':     7,
-    'tapping':   6,   # grooving layer — closest available
+    'drill':     -1,
+    'tapping':   -1,
 }
 
 STYLE = """
@@ -231,22 +166,21 @@ QPushButton#can  { background: #5a1a1a; font-size: 16pt; min-height: 50px; }
 # ---------------------------------------------------------------------------
 
 class DiagramWidget(QWidget):
-    """Renders one layer of Andy Pugh's LatheMacro.svg with labels."""
+    """Renders one layer of Andy Pugh's LatheMacro_vector.svg with labels."""
 
-    SVG_W, SVG_H = 1500, 1000   # native SVG coordinate space
+    SVG_W, SVG_H = 888, 686    # native SVG viewBox dimensions
+    SVG_BG = QColor(145, 145, 149)   # SVG's own background colour
     _shared_renderer = None
 
     def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
-        self._layer_id = f'layer{layer_idx}'
+        self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
         self._labels = LABELS.get(op_key, [])
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setStyleSheet('background: #c8c8c8;')
-        if HAS_SVG and DiagramWidget._shared_renderer is None:
-            svg = _svg_path()
-            if os.path.exists(svg):
-                DiagramWidget._shared_renderer = QSvgRenderer(svg)
+        self.setStyleSheet(f'background: rgb(145,145,149);')
+        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
     def _render_rect(self):
         """Return a QRectF that fits the SVG aspect ratio centred in the widget."""
@@ -269,14 +203,13 @@ class DiagramWidget(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
-        BG = QColor('#c8c8c8')
-        painter.fillRect(event.rect(), BG)
+        painter.fillRect(event.rect(), self.SVG_BG)
 
         r = DiagramWidget._shared_renderer
         rect = self._render_rect()
 
         if r and r.isValid():
-            if r.elementExists(self._layer_id):
+            if self._layer_id and r.elementExists(self._layer_id):
                 r.render(painter, self._layer_id, rect)
             else:
                 r.render(painter, rect)
