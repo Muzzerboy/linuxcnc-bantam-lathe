@@ -177,12 +177,13 @@ class DiagramWidget(QWidget):
         self._labels = LABELS.get(op_key, [])
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setStyleSheet('background: #111;')
         if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
     def _render_rect(self):
         """Return a QRectF that fits the SVG aspect ratio centred in the widget."""
-        margin = 12
+        margin = 4
         aw = self.width()  - 2 * margin
         ah = self.height() - 2 * margin
         svg_aspect = self.SVG_W / self.SVG_H
@@ -200,8 +201,8 @@ class DiagramWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Light grey background
-        painter.fillRect(event.rect(), QColor('#d8d8d8'))
+        # Dark background to match the SVG's embedded images
+        painter.fillRect(event.rect(), QColor('#111111'))
 
         r = DiagramWidget._shared_renderer
         rect = self._render_rect()
