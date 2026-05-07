@@ -339,7 +339,13 @@ class CycleField(QWidget):
             h = QLabel(hint); h.setObjectName('hint'); layout.addWidget(h)
 
     def _fmt(self, v):
-        return f'{int(v)}' if self.field_type == 'int' else f'{float(v):.4f}'
+        if self.field_type == 'int':
+            return f'{int(v)}'
+        if self.field_type == 'speed':
+            return f'{float(v):.0f}'
+        if self.field_type in ('feed', 'angle'):
+            return f'{float(v):.2f}'
+        return f'{float(v):.3f}'   # length, pitch, everything else
 
     def _open(self, event):
         dlg = NumpadDialog(self.label_text, self.edit.text(),
@@ -373,7 +379,8 @@ class OpPage(QWidget):
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Horizontal)
+        splitter = self.splitter
 
         # Left: SVG diagram
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
@@ -524,7 +531,8 @@ class ThreadingPage(OpPage):
     def _build(self, layer_idx, field_defs):
         outer = QHBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Horizontal)
+        splitter = self.splitter
 
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
         splitter.addWidget(self.diagram)
@@ -649,8 +657,8 @@ class UserTab(QWidget):
             ('x',      'Finish Diameter',    'Target OD at end of cut',            'mm',    15.0, 'length'),
             ('z',      'Finish Z',           'Z coordinate of cut end',            'mm',     0.0, 'length'),
             ('radius', 'End Radius',         'Nose radius at end of cut (0=none)', 'mm',     0.0, 'length'),
-            ('angle',  'Taper Angle',        'Taper angle in degrees (0=straight)','deg',    0.0, 'length'),
-            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
+            ('angle',  'Taper Angle',        'Taper angle in degrees (0=straight)','deg',    0.0, 'angle'),
+            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit (G96 D parameter)',        'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per spindle revolution',        'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (radius)', 'mm',     1.0, 'length'),
@@ -662,8 +670,8 @@ class UserTab(QWidget):
             ('x',      'Finish Bore Dia',    'Target bore diameter',               'mm',     0.0, 'length'),
             ('z',      'Finish Z',           'Z coordinate of bore end',           'mm',     0.0, 'length'),
             ('radius', 'Run-out Radius',     'Nose radius at bore end (0=none)',   'mm',     0.0, 'length'),
-            ('angle',  'Taper Angle',        'Bore taper angle in degrees (0=straight)','deg',0.0,'length'),
-            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
+            ('angle',  'Taper Angle',        'Bore taper angle in degrees (0=straight)','deg',0.0,'angle'),
+            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (radius)', 'mm',     1.0, 'length'),
@@ -674,8 +682,8 @@ class UserTab(QWidget):
         add('facing', LAYER['facing'], [
             ('x',      'Finish Diameter',    'Outer diameter of face',             'mm',     0.0, 'length'),
             ('z',      'Finish Z',           'Final face Z position',              'mm',     0.0, 'length'),
-            ('angle',  'Face Angle',         'Angle from perpendicular (0=flat)',  'deg',    0.0, 'length'),
-            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'length'),
+            ('angle',  'Face Angle',         'Angle from perpendicular (0=flat)',  'deg',    0.0, 'angle'),
+            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (Z)',      'mm',     1.0, 'length'),
@@ -688,7 +696,7 @@ class UserTab(QWidget):
             ('x',      'Diameter at Corner', 'OD (or bore dia) at the corner',    'mm',     0.0, 'length'),
             ('z',      'Z at Corner',        'Z position of the corner',          'mm',     0.0, 'length'),
             ('size',   'Chamfer Size',       'Width of chamfer along each face',  'mm',     1.0, 'length'),
-            ('ss',     'Surface Speed',      'Cutting speed',                     'm/min', 100.0,'length'),
+            ('ss',     'Surface Speed',      'Cutting speed',                     'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                         'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',               'mm/rev', 0.15,'feed'),
             ('doc',    'Step per Pass',      'Chamfer increment each pass',       'mm',     0.5, 'length'),
@@ -708,7 +716,7 @@ class UserTab(QWidget):
             ('x',      'Diameter at Corner', 'OD (or bore dia) at the corner',    'mm',     0.0, 'length'),
             ('z',      'Z at Corner',        'Z position of the corner',          'mm',     0.0, 'length'),
             ('size',   'Radius Size',        'Radius of the blend arc',           'mm',     1.0, 'length'),
-            ('ss',     'Surface Speed',      'Cutting speed',                     'm/min', 100.0,'length'),
+            ('ss',     'Surface Speed',      'Cutting speed',                     'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                         'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',               'mm/rev', 0.15,'feed'),
             ('doc',    'Step per Pass',      'Radius increment each pass',        'mm',     0.5, 'length'),
@@ -732,7 +740,7 @@ class UserTab(QWidget):
             ('dia',    'Drill Diameter',     'Drill bit diameter',                 'mm',    10.0, 'length'),
             ('depth',  'Drill Depth (Z)',    'Z coordinate of drill bottom',       'mm',     0.0, 'length'),
             ('peck',   'Peck Distance',      'Retract after each peck',            'mm',     2.0, 'length'),
-            ('ss',     'Surface Speed',      'Cutting speed at drill tip',         'm/min', 100.0,'length'),
+            ('ss',     'Surface Speed',      'Cutting speed at drill tip',         'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.05,'feed'),
             ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
@@ -750,6 +758,20 @@ class UserTab(QWidget):
         ], _tapping_call, 'Tapping')
 
         self.tabs = tabs
+
+        # Keep all splitters in sync — dragging one updates all others
+        self._splitters = [p.splitter for p in self.pages.values()
+                           if hasattr(p, 'splitter')]
+        for s in self._splitters:
+            s.splitterMoved.connect(self._sync_splitters)
+
+    def _sync_splitters(self, pos, index):
+        sizes = self.sender().sizes()
+        for s in self._splitters:
+            if s is not self.sender():
+                s.blockSignals(True)
+                s.setSizes(sizes)
+                s.blockSignals(False)
 
     def _load_state(self):
         try:
