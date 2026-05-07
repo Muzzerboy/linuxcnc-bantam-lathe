@@ -20,8 +20,8 @@ from qtpy.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QLabel, QLineEdit, QPushButton, QDialog, QButtonGroup,
     QRadioButton, QFrame, QScrollArea, QSizePolicy)
-from qtpy.QtCore import Qt, QRectF
-from qtpy.QtGui import QPainter
+from qtpy.QtCore import Qt, QRectF, QPointF
+from qtpy.QtGui import QPainter, QColor, QFont, QPen
 
 try:
     from qtpy.QtSvg import QSvgRenderer
@@ -32,6 +32,68 @@ except ImportError:
 TAB_DIR   = os.path.dirname(os.path.abspath(__file__))
 SVG_FILE  = os.path.join(TAB_DIR, 'LatheMacro.svg')
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
+
+# Spinbox label positions from Andy's lathemacro.ui.
+# Coordinates are in the SVG's 1500x1000 coordinate space.
+# Format: { operation_key: [ ((svg_x, svg_y), 'Label text'), ... ] }
+LABELS = {
+    'turning': [
+        ((1000, 654), 'Finish Diameter'),
+        ((635,  687), 'Feed per Rev'),
+        ((800,  230), 'End Radius'),
+        ((821,  863), 'Cut per Pass'),
+        ((125,  424), 'Finish Z'),
+        ((520,  474), 'Taper Angle'),
+    ],
+    'boring': [
+        ((700,  280), 'Taper Angle'),
+        ((421,  520), 'Run-out Radius'),
+        ((1080, 616), 'Finish Diameter'),
+        ((900,  825), 'Diameter Increment'),
+        ((530,  820), 'Feed per Rev'),
+        ((273,  267), 'Finish Z'),
+    ],
+    'facing': [
+        ((156,  404), 'Finish Z'),
+        ((1115, 626), 'Finish Diameter'),
+        ((876,  886), 'Feed per Rev'),
+        ((408,  760), 'Cut per Pass'),
+        ((1044, 364), 'Face Angle'),
+    ],
+    'radius': [
+        ((1018, 674), 'Diameter at Corner'),
+        ((202,  334), 'Z Position'),
+        ((848,  451), 'Radius Size'),
+        ((863,  629), 'Front Inside'),
+        ((763,  680), 'Front Outside'),
+        ((335,  448), 'Rear Outside'),
+    ],
+    'chamfer': [
+        ((202,  334), 'Z Position'),
+        ((1112, 287), 'Chamfer Size'),
+        ((1033, 678), 'Diameter at Corner'),
+        ((335,  448), 'Rear Outside'),
+        ((763,  680), 'Front Outside'),
+        ((863,  629), 'Front Inside'),
+    ],
+    'threading': [
+        ((268,  341), 'Finish Z'),
+        ((652,  737), 'External (OD)'),
+        ((754,  603), 'Internal (ID)'),
+        ((1010, 753), 'Thread Diameter'),
+        ((192,  616), 'Thread Pitch'),
+    ],
+    'drill': [
+        ((1200, 270), 'Drill Diameter'),
+        ((260,  250), 'Drill Depth (Z)'),
+        ((770,  900), 'Feed per Rev'),
+        ((300,  711), 'Peck Distance'),
+    ],
+    'tapping': [
+        ((1084, 672), 'Tap Diameter'),
+        ((648,  864), 'Pitch / Feed'),
+    ],
+}
 
 # SVG layer index per operation (matches Andy's GladeVCP tab order)
 LAYER = {
@@ -104,37 +166,70 @@ QPushButton#can  { background: #5a1a1a; font-size: 16pt; min-height: 50px; }
 # ---------------------------------------------------------------------------
 
 class DiagramWidget(QWidget):
-    """Renders one layer of Andy Pugh's LatheMacro.svg using element-ID rendering."""
+    """Renders one layer of Andy Pugh's LatheMacro.svg with labels."""
 
-    # One shared renderer for all instances (load SVG once)
+    SVG_W, SVG_H = 1500, 1000   # native SVG coordinate space
     _shared_renderer = None
 
-    def __init__(self, layer_idx, parent=None):
+    def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}'
+        self._labels = LABELS.get(op_key, [])
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setStyleSheet('background: #111;')
         if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+
+    def _render_rect(self):
+        """Return a QRectF that fits the SVG aspect ratio centred in the widget."""
+        margin = 12
+        aw = self.width()  - 2 * margin
+        ah = self.height() - 2 * margin
+        svg_aspect = self.SVG_W / self.SVG_H
+        if aw / ah > svg_aspect:
+            rw = ah * svg_aspect
+            rh = ah
+        else:
+            rw = aw
+            rh = aw / svg_aspect
+        rx = margin + (aw - rw) / 2
+        ry = margin + (ah - rh) / 2
+        return QRectF(rx, ry, rw, rh)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.fillRect(event.rect(), Qt.black)
+
+        # Light grey background
+        painter.fillRect(event.rect(), QColor('#d8d8d8'))
+
         r = DiagramWidget._shared_renderer
+        rect = self._render_rect()
+
         if r and r.isValid():
-            margin = 16
-            rect = QRectF(margin, margin,
-                          self.width()  - 2*margin,
-                          self.height() - 2*margin)
             if r.elementExists(self._layer_id):
                 r.render(painter, self._layer_id, rect)
             else:
                 r.render(painter, rect)
+
+            # Overlay dimension labels
+            font = QFont('Sans', 8, QFont.Bold)
+            painter.setFont(font)
+            fm = painter.fontMetrics()
+            for (sx, sy), text in self._labels:
+                # Map SVG coords to widget coords
+                wx = rect.left() + (sx / self.SVG_W) * rect.width()
+                wy = rect.top()  + (sy / self.SVG_H) * rect.height()
+                tw = fm.horizontalAdvance(text) + 6
+                th = fm.height() + 2
+                bg = QRectF(wx - tw/2, wy - th/2, tw, th)
+                painter.fillRect(bg, QColor(255, 255, 200, 210))
+                painter.setPen(QPen(QColor('#222')))
+                painter.drawText(bg, Qt.AlignCenter, text)
         else:
-            painter.setPen(Qt.gray)
+            painter.setPen(QColor('#666'))
             painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
+
         painter.end()
 
 
@@ -280,7 +375,7 @@ class OpPage(QWidget):
         splitter = QSplitter(Qt.Horizontal)
 
         # Left: SVG diagram
-        self.diagram = DiagramWidget(layer_idx)
+        self.diagram = DiagramWidget(self.sub_name, layer_idx)
         splitter.addWidget(self.diagram)
 
         # Right: fields + run button
@@ -349,7 +444,7 @@ class RadioOpPage(OpPage):
         outer.setContentsMargins(0, 0, 0, 0)
         splitter = QSplitter(Qt.Horizontal)
 
-        self.diagram = DiagramWidget(layer_idx)
+        self.diagram = DiagramWidget(self.sub_name, layer_idx)
         splitter.addWidget(self.diagram)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
@@ -430,7 +525,7 @@ class ThreadingPage(OpPage):
         outer.setContentsMargins(0, 0, 0, 0)
         splitter = QSplitter(Qt.Horizontal)
 
-        self.diagram = DiagramWidget(layer_idx)
+        self.diagram = DiagramWidget(self.sub_name, layer_idx)
         splitter.addWidget(self.diagram)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
