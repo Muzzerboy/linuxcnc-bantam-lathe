@@ -38,37 +38,37 @@ STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 LABELS = {
     'turning': [
         ((592, 449), 'Finish Diameter'),
-        ((376, 471), 'Feed per Rev'),
+        ((376, 471), 'Feed Rate'),
         ((474, 158), 'End Radius'),
-        ((486, 592), 'Cut per Pass'),
+        ((486, 592), 'Depth of Cut'),
         (( 74, 291), 'Finish Z'),
         ((308, 325), 'Taper Angle'),
     ],
     'boring': [
         ((414, 192), 'Taper Angle'),
         ((249, 357), 'Run-out Radius'),
-        ((639, 423), 'Finish Diameter'),
-        ((533, 566), 'Diameter Increment'),
-        ((314, 563), 'Feed per Rev'),
+        ((639, 423), 'Finish Bore Dia'),
+        ((533, 566), 'Depth of Cut'),
+        ((314, 563), 'Feed Rate'),
         ((162, 183), 'Finish Z'),
     ],
     'facing': [
         (( 92, 277), 'Finish Z'),
         ((660, 429), 'Finish Diameter'),
-        ((519, 608), 'Feed per Rev'),
-        ((241, 521), 'Cut per Pass'),
+        ((519, 608), 'Feed Rate'),
+        ((241, 521), 'Depth of Cut'),
         ((618, 250), 'Face Angle'),
     ],
     'radius': [
         ((603, 463), 'Diameter at Corner'),
-        ((120, 229), 'Z Position'),
+        ((120, 229), 'Z at Corner'),
         ((502, 309), 'Radius Size'),
         ((511, 431), 'Front Inside'),
         ((452, 467), 'Front Outside'),
         ((198, 307), 'Rear Outside'),
     ],
     'chamfer': [
-        ((120, 229), 'Z Position'),
+        ((120, 229), 'Z at Corner'),
         ((658, 197), 'Chamfer Size'),
         ((612, 465), 'Diameter at Corner'),
         ((198, 307), 'Rear Outside'),
@@ -85,12 +85,12 @@ LABELS = {
     'drill': [
         ((710, 185), 'Drill Diameter'),
         ((154, 171), 'Drill Depth (Z)'),
-        ((456, 617), 'Feed per Rev'),
+        ((456, 617), 'Feed Rate'),
         ((178, 488), 'Peck Distance'),
     ],
     'tapping': [
         ((642, 461), 'Tap Diameter'),
-        ((384, 593), 'Pitch / Feed'),
+        ((384, 593), 'Thread Pitch'),
     ],
 }
 
@@ -404,7 +404,7 @@ class OpPage(QWidget):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([350, 580])
+        splitter.setSizes([700, 300])
         outer.addWidget(splitter)
 
     def _run(self):
@@ -478,7 +478,7 @@ class RadioOpPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([350, 580])
+        splitter.setSizes([700, 300])
         outer.addWidget(splitter)
 
     def selected_radio(self):
@@ -551,7 +551,7 @@ class ThreadingPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([350, 580])
+        splitter.setSizes([700, 300])
         outer.addWidget(splitter)
 
     def _call(self, f):
