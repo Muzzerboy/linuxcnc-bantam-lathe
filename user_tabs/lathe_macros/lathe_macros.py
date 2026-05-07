@@ -177,7 +177,7 @@ class DiagramWidget(QWidget):
         self._labels = LABELS.get(op_key, [])
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setStyleSheet('background: #111;')
+        self.setStyleSheet('background: #c8c8c8;')
         if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
@@ -201,31 +201,39 @@ class DiagramWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Dark background to match the SVG's embedded images
-        painter.fillRect(event.rect(), QColor('#111111'))
+        BG = QColor('#c8c8c8')   # light grey background
+
+        # Fill whole widget with background first
+        painter.fillRect(event.rect(), BG)
 
         r = DiagramWidget._shared_renderer
         rect = self._render_rect()
 
         if r and r.isValid():
+            # Fill the SVG render area with light grey
+            painter.fillRect(rect, BG)
+
+            # Screen blend: black SVG pixels become background colour,
+            # grey/white model pixels remain visible.
+            painter.setCompositionMode(QPainter.CompositionMode_Screen)
             if r.elementExists(self._layer_id):
                 r.render(painter, self._layer_id, rect)
             else:
                 r.render(painter, rect)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
             # Overlay dimension labels
             font = QFont('Sans', 8, QFont.Bold)
             painter.setFont(font)
             fm = painter.fontMetrics()
             for (sx, sy), text in self._labels:
-                # Map SVG coords to widget coords
                 wx = rect.left() + (sx / self.SVG_W) * rect.width()
                 wy = rect.top()  + (sy / self.SVG_H) * rect.height()
                 tw = fm.horizontalAdvance(text) + 6
                 th = fm.height() + 2
                 bg = QRectF(wx - tw/2, wy - th/2, tw, th)
-                painter.fillRect(bg, QColor(255, 255, 200, 210))
-                painter.setPen(QPen(QColor('#222')))
+                painter.fillRect(bg, QColor(255, 255, 180, 220))
+                painter.setPen(QPen(QColor('#111')))
                 painter.drawText(bg, Qt.AlignCenter, text)
         else:
             painter.setPen(QColor('#666'))
