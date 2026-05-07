@@ -1,0 +1,85 @@
+{
+  "turning": {
+    "x": 15.0,
+    "z": 0.0,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.15,
+    "doc": 1.0,
+    "tool": 1.0,
+    "coolant": 0.0
+  },
+  "boring": {
+    "x": 0.0,
+    "z": 0.0,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.15,
+    "doc": 1.0,
+    "tool": 1.0,
+    "coolant": 0.0
+  },
+  "facing": {
+    "x": 0.0,
+    "z": 25.4203,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.15,
+    "doc": 1.0,
+    "tool": 1.0,
+    "coolant": 0.0
+  },
+  "chamfer": {
+    "x": 0.0,
+    "z": 0.0,
+    "size": 1.0,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.15,
+    "doc": 0.5,
+    "tool": 1.0,
+    "coolant": 0.0,
+    "_radio": "fo"
+  },
+  "radius": {
+    "x": 0.0,
+    "z": 0.0,
+    "size": 1.0,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.15,
+    "doc": 0.5,
+    "tool": 1.0,
+    "coolant": 0.0,
+    "_radio": "fo"
+  },
+  "threading": {
+    "x": 20.0,
+    "z": 0.0,
+    "pitch": 1.0,
+    "ss": 50.0,
+    "maxrpm": 200.0,
+    "tool": 5.0,
+    "coolant": 0.0,
+    "_internal": false
+  },
+  "drill": {
+    "dia": 10.0,
+    "depth": 0.0,
+    "peck": 2.0,
+    "ss": 100.0,
+    "maxrpm": 2000.0,
+    "feed": 0.05,
+    "tool": 1.0,
+    "coolant": 0.0
+  },
+  "tapping": {
+    "dia": 10.0,
+    "z": 0.0,
+    "pitch": 1.0,
+    "ss": 30.0,
+    "tool": 1.0,
+    "coolant": 0.0,
+    "ramp": 5.0
+  }
+}
