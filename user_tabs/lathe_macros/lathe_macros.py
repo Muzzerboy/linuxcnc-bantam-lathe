@@ -160,6 +160,83 @@ QPushButton#ok   { background: #1a5a1a; font-size: 16pt; min-height: 50px; }
 QPushButton#can  { background: #5a1a1a; font-size: 16pt; min-height: 50px; }
 """
 
+INSTRUCTIONS = {
+    'turning': (
+        "1. Select a turning tool (Tool Number).\n\n"
+        "2. Touch off Z=0 at the workpiece face.\n\n"
+        "3. Position tool tip at the stock OD at your start Z.\n\n"
+        "4. Set Finish Diameter (target OD) and Finish Z (end of cut, negative = left).\n\n"
+        "5. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "6. Press RUN."
+    ),
+    'boring': (
+        "1. Select a boring bar (Tool Number).\n\n"
+        "2. Position tool tip inside the bore at the entry face.\n\n"
+        "3. Set Finish Bore Dia (target bore diameter) and Finish Z (bore bottom, negative).\n\n"
+        "4. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "5. Press RUN."
+    ),
+    'facing': (
+        "1. Select a facing tool (Tool Number).\n\n"
+        "2. Position tool at the outer edge of the stock, lightly touching the face.\n\n"
+        "3. Set Finish Diameter (stock OD) and Finish Z (final face Z position).\n\n"
+        "4. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "5. Press RUN."
+    ),
+    'chamfer': (
+        "1. Select a 45° chamfering tool (Tool Number).\n\n"
+        "2. Set Diameter at Corner and Z at Corner to the workpiece corner position.\n\n"
+        "3. Set Chamfer Size (width along each face).\n\n"
+        "4. Select corner type: Front Outside (OD/end), Front Inside (bore/end) or Rear Outside (OD/shoulder).\n\n"
+        "5. Press RUN."
+    ),
+    'radius': (
+        "1. Select a round-nose tool (Tool Number).\n\n"
+        "2. Set Diameter at Corner and Z at Corner to the workpiece corner position.\n\n"
+        "3. Set Radius Size.\n\n"
+        "4. Select corner type: Front Outside, Front Inside or Rear Outside.\n\n"
+        "5. Press RUN."
+    ),
+    'threading': (
+        "1. Select a threading insert (Tool Number).\n\n"
+        "2. Set Thread Diameter (nominal) and Finish Z (thread end, negative).\n\n"
+        "3. Set Thread Pitch (mm) and Speed (constant RPM, typically 200–400).\n\n"
+        "4. Select External or Internal.\n\n"
+        "5. Press RUN."
+    ),
+    'drill': (
+        "1. Select a drill bit (Tool Number).\n\n"
+        "2. Centre-drill first if needed.\n\n"
+        "3. Set Drill Diameter, Drill Depth Z (negative) and Peck Distance (0 = no pecking).\n\n"
+        "4. Set Surface Speed and Feed Rate.\n\n"
+        "5. Press RUN."
+    ),
+    'tapping': (
+        "1. Select a tap in a tension-compression holder (Tool Number).\n\n"
+        "2. Set Tap Diameter, Tap Depth Z (negative) and Thread Pitch.\n\n"
+        "3. Use a low Spindle Speed (30–100 RPM).\n\n"
+        "4. Pre-drill to the correct tapping diameter.\n\n"
+        "5. Press RUN. The spindle reverses automatically on retract."
+    ),
+}
+
+
+def _make_help_widget(op_key):
+    w = QWidget()
+    vl = QVBoxLayout(w)
+    vl.setContentsMargins(12, 10, 12, 10)
+    vl.setSpacing(6)
+    title = QLabel('How to use')
+    title.setStyleSheet('color: #8fc88f; font-weight: bold; font-size: 11pt;')
+    body = QLabel(INSTRUCTIONS.get(op_key, ''))
+    body.setWordWrap(True)
+    body.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+    body.setStyleSheet('color: #bbb; font-size: 10pt;')
+    vl.addWidget(title)
+    vl.addWidget(body)
+    vl.addStretch()
+    return w
+
 
 # ---------------------------------------------------------------------------
 # SVG diagram panel
@@ -388,14 +465,18 @@ class OpPage(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # Left: SVG diagram — fixed at 31% stretch
+        # Left: SVG diagram (auto-sizes to aspect ratio)
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
         outer.addWidget(self.diagram)
 
-        # Right: fields + run button — 69% stretch
+        # Right: fields (60%) + help text (40%)
         right = QWidget()
-        right.setStyleSheet('background: #2a2a2a;')
-        rl = QVBoxLayout(right)
+        right_l = QHBoxLayout(right)
+        right_l.setContentsMargins(0, 0, 0, 0)
+        right_l.setSpacing(0)
+
+        fields_w = QWidget()
+        rl = QVBoxLayout(fields_w)
         rl.setContentsMargins(10, 10, 10, 10)
         rl.setSpacing(4)
 
@@ -405,7 +486,6 @@ class OpPage(QWidget):
             rl.addWidget(f)
 
         rl.addStretch()
-
         self.status = QLabel('')
         self.status.setWordWrap(True)
         self.status.setStyleSheet('color: #f90; font-size: 10pt;')
@@ -415,6 +495,14 @@ class OpPage(QWidget):
         run.setObjectName('run')
         run.clicked.connect(self._run)
         rl.addWidget(run)
+
+        sep = QFrame()
+        sep.setFrameShape(QFrame.VLine)
+        sep.setStyleSheet('color: #444;')
+
+        right_l.addWidget(fields_w, 3)
+        right_l.addWidget(sep)
+        right_l.addWidget(_make_help_widget(self.sub_name), 2)
 
         outer.addWidget(right, 1)
 
@@ -459,16 +547,21 @@ class RadioOpPage(OpPage):
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
         outer.addWidget(self.diagram)
 
-        right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
-        rl = QVBoxLayout(right)
+        right = QWidget()
+        right_l = QHBoxLayout(right)
+        right_l.setContentsMargins(0, 0, 0, 0)
+        right_l.setSpacing(0)
+
+        fields_w = QWidget()
+        rl = QVBoxLayout(fields_w)
         rl.setContentsMargins(10, 10, 10, 10); rl.setSpacing(4)
 
         for key, label, hint, unit, default, ftype in field_defs:
             f = CycleField(key, label, hint, unit, default, ftype)
             self.fields[key] = f; rl.addWidget(f)
 
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet('color: #444;'); rl.addWidget(sep)
+        hsep = QFrame(); hsep.setFrameShape(QFrame.HLine)
+        hsep.setStyleSheet('color: #444;'); rl.addWidget(hsep)
 
         lbl = QLabel('Corner type:')
         lbl.setStyleSheet('color: #aaa; font-size: 11pt;')
@@ -487,6 +580,14 @@ class RadioOpPage(OpPage):
         run = QPushButton(f'  RUN {self.sub_name.upper()}  ')
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
+
+        vsep = QFrame()
+        vsep.setFrameShape(QFrame.VLine)
+        vsep.setStyleSheet('color: #444;')
+
+        right_l.addWidget(fields_w, 3)
+        right_l.addWidget(vsep)
+        right_l.addWidget(_make_help_widget(self.sub_name), 2)
 
         outer.addWidget(right, 1)
 
@@ -538,16 +639,21 @@ class ThreadingPage(OpPage):
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
         outer.addWidget(self.diagram)
 
-        right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
-        rl = QVBoxLayout(right)
+        right = QWidget()
+        right_l = QHBoxLayout(right)
+        right_l.setContentsMargins(0, 0, 0, 0)
+        right_l.setSpacing(0)
+
+        fields_w = QWidget()
+        rl = QVBoxLayout(fields_w)
         rl.setContentsMargins(10, 10, 10, 10); rl.setSpacing(4)
 
         for key, label, hint, unit, default, ftype in field_defs:
             f = CycleField(key, label, hint, unit, default, ftype)
             self.fields[key] = f; rl.addWidget(f)
 
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet('color: #444;'); rl.addWidget(sep)
+        hsep = QFrame(); hsep.setFrameShape(QFrame.HLine)
+        hsep.setStyleSheet('color: #444;'); rl.addWidget(hsep)
         rl.addWidget(self.rb_ext); rl.addWidget(self.rb_int)
         rl.addStretch()
 
@@ -558,6 +664,14 @@ class ThreadingPage(OpPage):
         run = QPushButton('  RUN THREADING  ')
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
+
+        vsep = QFrame()
+        vsep.setFrameShape(QFrame.VLine)
+        vsep.setStyleSheet('color: #444;')
+
+        right_l.addWidget(fields_w, 3)
+        right_l.addWidget(vsep)
+        right_l.addWidget(_make_help_widget(self.sub_name), 2)
 
         outer.addWidget(right, 1)
 
