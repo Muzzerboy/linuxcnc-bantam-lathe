@@ -176,11 +176,19 @@ class DiagramWidget(QWidget):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
         self._labels = LABELS.get(op_key, [])
-        self.setMinimumSize(300, 250)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setStyleSheet(f'background: rgb(145,145,149);')
+        self.setMinimumSize(100, 100)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.setStyleSheet('background: rgb(145,145,149);')
         if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        h = event.size().height()
+        if h > 20:
+            target_w = int(h * self.SVG_W / self.SVG_H)
+            if abs(self.width() - target_w) > 1:
+                self.setFixedWidth(target_w)
 
     def _render_rect(self):
         """Return a QRectF that fits the SVG aspect ratio centred in the widget."""
@@ -382,7 +390,7 @@ class OpPage(QWidget):
 
         # Left: SVG diagram — fixed at 31% stretch
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        outer.addWidget(self.diagram, 31)
+        outer.addWidget(self.diagram)
 
         # Right: fields + run button — 69% stretch
         right = QWidget()
@@ -408,7 +416,7 @@ class OpPage(QWidget):
         run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        outer.addWidget(right, 69)
+        outer.addWidget(right, 1)
 
     def _run(self):
         try:
@@ -449,7 +457,7 @@ class RadioOpPage(OpPage):
         outer.setSpacing(0)
 
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        outer.addWidget(self.diagram, 31)
+        outer.addWidget(self.diagram)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
         rl = QVBoxLayout(right)
@@ -480,7 +488,7 @@ class RadioOpPage(OpPage):
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        outer.addWidget(right, 69)
+        outer.addWidget(right, 1)
 
     def selected_radio(self):
         for key, rb in self.radios.items():
@@ -528,7 +536,7 @@ class ThreadingPage(OpPage):
         outer.setSpacing(0)
 
         self.diagram = DiagramWidget(self.sub_name, layer_idx)
-        outer.addWidget(self.diagram, 31)
+        outer.addWidget(self.diagram)
 
         right = QWidget(); right.setStyleSheet('background: #2a2a2a;')
         rl = QVBoxLayout(right)
@@ -551,7 +559,7 @@ class ThreadingPage(OpPage):
         run.setObjectName('run'); run.clicked.connect(self._run)
         rl.addWidget(run)
 
-        outer.addWidget(right, 69)
+        outer.addWidget(right, 1)
 
     def _call(self, f):
         tid = 1.0 if self.rb_int.isChecked() else 0.0
