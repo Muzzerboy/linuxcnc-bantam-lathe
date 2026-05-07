@@ -13,6 +13,9 @@ Operations: Turning, Boring, Facing, Chamfer, Radius,
 """
 
 import os
+import re
+import base64
+import io
 import json
 import linuxcnc
 
@@ -29,9 +32,64 @@ try:
 except ImportError:
     HAS_SVG = False
 
-TAB_DIR   = os.path.dirname(os.path.abspath(__file__))
-SVG_FILE  = os.path.join(TAB_DIR, 'LatheMacro.svg')
-STATE_FILE = os.path.join(TAB_DIR, 'state.json')
+TAB_DIR          = os.path.dirname(os.path.abspath(__file__))
+SVG_FILE         = os.path.join(TAB_DIR, 'LatheMacro.svg')
+SVG_TRANSPARENT  = os.path.join(TAB_DIR, 'LatheMacro_transparent.svg')
+STATE_FILE       = os.path.join(TAB_DIR, 'state.json')
+
+
+def _build_transparent_svg():
+    """
+    Pre-process LatheMacro.svg: make pure-black PNG backgrounds transparent.
+    Cached to LatheMacro_transparent.svg. Run in a background thread on first
+    use; on subsequent starts the cache is already there so this is instant.
+    """
+    if not os.path.exists(SVG_FILE):
+        return
+
+    # Already up to date
+    if (os.path.exists(SVG_TRANSPARENT) and
+            os.path.getmtime(SVG_TRANSPARENT) >= os.path.getmtime(SVG_FILE)):
+        return
+
+    try:
+        import numpy as np
+        from PIL import Image
+    except ImportError:
+        return
+
+    txt = open(SVG_FILE, encoding='utf-8').read()
+
+    def fix_png(m):
+        try:
+            raw = base64.b64decode(m.group(1))
+            img = Image.open(io.BytesIO(raw)).convert('LA')
+            arr = np.array(img)
+            arr[:, :, 1] = np.where(arr[:, :, 0] == 0, 0, 255).astype(np.uint8)
+            buf = io.BytesIO()
+            Image.fromarray(arr, mode='LA').save(buf, 'PNG')
+            return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
+        except Exception:
+            return m.group(0)
+
+    result = re.sub(r'data:image/png;base64,([A-Za-z0-9+/=]+)', fix_png, txt)
+    try:
+        with open(SVG_TRANSPARENT, 'w', encoding='utf-8') as f:
+            f.write(result)
+    except Exception:
+        pass
+
+
+def _svg_path():
+    """Return the best SVG path: transparent version if available, else original."""
+    if os.path.exists(SVG_TRANSPARENT):
+        return SVG_TRANSPARENT
+    return SVG_FILE
+
+
+# Kick off preprocessing in background (instant if cache exists)
+import threading
+threading.Thread(target=_build_transparent_svg, daemon=True).start()
 
 # Spinbox label positions from Andy's lathemacro.ui.
 # Coordinates are in the SVG's 1500x1000 coordinate space.
@@ -178,8 +236,10 @@ class DiagramWidget(QWidget):
         self.setMinimumSize(300, 250)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setStyleSheet('background: #c8c8c8;')
-        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
-            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+        if HAS_SVG and DiagramWidget._shared_renderer is None:
+            svg = _svg_path()
+            if os.path.exists(svg):
+                DiagramWidget._shared_renderer = QSvgRenderer(svg)
 
     def _render_rect(self):
         """Return a QRectF that fits the SVG aspect ratio centred in the widget."""
@@ -201,26 +261,17 @@ class DiagramWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        BG = QColor('#c8c8c8')   # light grey background
-
-        # Fill whole widget with background first
+        BG = QColor('#c8c8c8')
         painter.fillRect(event.rect(), BG)
 
         r = DiagramWidget._shared_renderer
         rect = self._render_rect()
 
         if r and r.isValid():
-            # Fill the SVG render area with light grey
-            painter.fillRect(rect, BG)
-
-            # Screen blend: black SVG pixels become background colour,
-            # grey/white model pixels remain visible.
-            painter.setCompositionMode(QPainter.CompositionMode_Screen)
             if r.elementExists(self._layer_id):
                 r.render(painter, self._layer_id, rect)
             else:
                 r.render(painter, rect)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
             # Overlay dimension labels
             font = QFont('Sans', 8, QFont.Bold)
