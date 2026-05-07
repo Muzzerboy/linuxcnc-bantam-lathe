@@ -256,8 +256,20 @@ class DiagramWidget(QWidget):
         self.setMinimumSize(100, 100)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setStyleSheet('background: rgb(145,145,149);')
+        self.setMouseTracking(True)
+        self._hover = ''
         if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+
+    def mouseMoveEvent(self, event):
+        rect = self._render_rect()
+        if rect.contains(QPointF(event.pos())):
+            sx = int((event.x() - rect.x()) / rect.width()  * self.SVG_W)
+            sy = int((event.y() - rect.y()) / rect.height() * self.SVG_H)
+            self._hover = f'{sx}, {sy}'
+        else:
+            self._hover = ''
+        self.update()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -315,6 +327,15 @@ class DiagramWidget(QWidget):
         else:
             painter.setPen(QColor('#666'))
             painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
+
+        # Coordinate readout (hover tool for label positioning)
+        if self._hover:
+            painter.setFont(QFont('Monospace', 9))
+            painter.setPen(QPen(QColor('#000')))
+            painter.fillRect(QRectF(rect.right()-90, rect.top()+4, 86, 18),
+                             QColor(255, 255, 200, 210))
+            painter.drawText(QRectF(rect.right()-90, rect.top()+4, 86, 18),
+                             Qt.AlignCenter, self._hover)
 
         painter.end()
 
