@@ -404,7 +404,7 @@ class OpPage(QWidget):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([700, 300])
+        splitter.setSizes([310, 690])
         outer.addWidget(splitter)
 
     def _run(self):
@@ -478,7 +478,7 @@ class RadioOpPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([700, 300])
+        splitter.setSizes([310, 690])
         outer.addWidget(splitter)
 
     def selected_radio(self):
@@ -551,7 +551,7 @@ class ThreadingPage(OpPage):
         rl.addWidget(run)
 
         splitter.addWidget(right)
-        splitter.setSizes([700, 300])
+        splitter.setSizes([310, 690])
         outer.addWidget(splitter)
 
     def _call(self, f):
