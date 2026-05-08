@@ -99,7 +99,7 @@ LABELS = {
     ],
     'groove': [
         ((1050, 600), 'Groove Diameter'),
-        (( 800, 240), 'Groove Z'),        # position TBD
+        (( 710, 330), 'Groove Z'),
         (( 680, 885), 'Feed Rate'),
     ],
     'drill': [

@@ -56,5 +56,5 @@ DRILLING
 
 GROOVING
   Groove Diameter    →1050,600
-  Groove Z           →
+  Groove Z           →710,330
   Feed Rate          →680,885
