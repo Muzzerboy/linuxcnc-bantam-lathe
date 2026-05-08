@@ -30,7 +30,8 @@ except ImportError:
     HAS_SVG = False
 
 TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
-SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
+SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')       # pure vector, layers 0-5
+SVG_DG     = os.path.join(TAB_DIR, 'LatheMacro_drill_groove.svg') # processed V3, layers 6-7
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
 # Spinbox label positions in the SVG's 888×686 coordinate space.
@@ -82,16 +83,16 @@ LABELS = {
         ((380, 580), '(External - OD)'),
         ((525, 410), '(Internal - ID)'),
     ],
-    # Approximate — refine with hover tool
+    # Approximate in 1500x1000 space — refine with hover tool
     'groove': [
-        ((565, 178), 'Groove Z'),
-        ((768, 303), 'Groove Diameter'),
+        (( 800, 240), 'Groove Z'),
+        ((1350, 450), 'Groove Diameter'),
     ],
     'drill': [
-        ((663, 310), 'Drill Diameter'),
-        ((574, 503), 'Drill Depth (Z)'),
-        ((722, 317), 'Peck Distance'),
-        ((800, 162), 'Feed Rate'),
+        ((1150, 450), 'Drill Diameter'),
+        (( 950, 750), 'Drill Depth (Z)'),
+        ((1230, 460), 'Peck Distance'),
+        ((1350, 230), 'Feed Rate'),
     ],
 }
 
@@ -247,27 +248,34 @@ def _make_help_widget(op_key):
 class DiagramWidget(QWidget):
     """Renders one layer of Andy Pugh's LatheMacro_vector.svg with labels."""
 
-    SVG_W, SVG_H = 888, 686    # native SVG viewBox dimensions
+    SVG_W, SVG_H    = 888,  686    # vector SVG viewBox
+    SVG_DG_W, SVG_DG_H = 1500, 1000  # drill/groove SVG viewBox
     SVG_BG = QColor(145, 145, 149)
-    _shared_renderer = None
+    _shared_renderer    = None   # pure vector, layers 0-5
+    _shared_renderer_dg = None   # processed V3, layers 6-7
 
     def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
+        self._use_dg   = layer_idx >= 6
         self._labels   = LABELS.get(op_key, [])
         self.setMinimumSize(100, 100)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setStyleSheet('background: rgb(145,145,149);')
         self.setMouseTracking(True)
         self._hover = ''
-        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
-            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+        if HAS_SVG:
+            if DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+                DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+            if DiagramWidget._shared_renderer_dg is None and os.path.exists(SVG_DG):
+                DiagramWidget._shared_renderer_dg = QSvgRenderer(SVG_DG)
 
     def mouseMoveEvent(self, event):
         rect = self._render_rect()
         if rect.contains(QPointF(event.pos())):
-            sx = int((event.x() - rect.x()) / rect.width()  * self.SVG_W)
-            sy = int((event.y() - rect.y()) / rect.height() * self.SVG_H)
+            sw, sh = (self.SVG_DG_W, self.SVG_DG_H) if self._use_dg else (self.SVG_W, self.SVG_H)
+            sx = int((event.x() - rect.x()) / rect.width()  * sw)
+            sy = int((event.y() - rect.y()) / rect.height() * sh)
             self._hover = f'{sx}, {sy}'
         else:
             self._hover = ''
@@ -277,7 +285,8 @@ class DiagramWidget(QWidget):
         super().resizeEvent(event)
         h = event.size().height()
         if h > 20:
-            target_w = int(h * self.SVG_W / self.SVG_H)
+            sw, sh = (self.SVG_DG_W, self.SVG_DG_H) if self._use_dg else (self.SVG_W, self.SVG_H)
+            target_w = int(h * sw / sh)
             if abs(self.width() - target_w) > 1:
                 self.setFixedWidth(target_w)
 
@@ -286,7 +295,8 @@ class DiagramWidget(QWidget):
         margin = 4
         aw = self.width()  - 2 * margin
         ah = self.height() - 2 * margin
-        svg_aspect = self.SVG_W / self.SVG_H
+        sw, sh = (self.SVG_DG_W, self.SVG_DG_H) if self._use_dg else (self.SVG_W, self.SVG_H)
+        svg_aspect = sw / sh
         if aw / ah > svg_aspect:
             rw = ah * svg_aspect
             rh = ah
@@ -304,7 +314,8 @@ class DiagramWidget(QWidget):
 
         painter.fillRect(event.rect(), self.SVG_BG)
 
-        r = DiagramWidget._shared_renderer
+        r = (DiagramWidget._shared_renderer_dg if self._use_dg
+             else DiagramWidget._shared_renderer)
         rect = self._render_rect()
 
         if self._layer_id is None:
