@@ -33,10 +33,17 @@ TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
 SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
-# Pre-rendered PNGs for groove/drill (produced by librsvg — full marker support)
-DG_PNGS = {
-    'groove': os.path.join(TAB_DIR, 'groove_rendered.png'),
-    'drill':  os.path.join(TAB_DIR, 'drill_rendered.png'),
+# Pre-rendered PNGs for all 8 operations (librsvg — arrowheads + full SVG spec)
+# Format: {op_key: (filename, label_coord_w, label_coord_h)}
+OP_PNGS = {
+    'turning':   ('turning_rendered.png',    888,  686),
+    'boring':    ('boring_rendered.png',     888,  686),
+    'facing':    ('facing_rendered.png',     888,  686),
+    'chamfer':   ('chamfer_rendered.png',    888,  686),
+    'radius':    ('radius_rendered.png',     888,  686),
+    'threading': ('threading_rendered.png',  888,  686),
+    'groove':    ('groove_rendered.png',    1500, 1000),
+    'drill':     ('drill_rendered.png',     1500, 1000),
 }
 
 # Spinbox label positions in the SVG's 888×686 coordinate space.
@@ -253,37 +260,36 @@ def _make_help_widget(op_key):
 class DiagramWidget(QWidget):
     """Renders one layer of Andy Pugh's LatheMacro_vector.svg with labels."""
 
-    SVG_W, SVG_H    = 888,  686    # vector SVG viewBox
-    SVG_DG_W, SVG_DG_H = 1500, 1000  # groove/drill PNG coordinate space
     SVG_BG = QColor(145, 145, 149)
-    _shared_renderer = None
+    _shared_renderer = None   # fallback only
 
     def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
-        self._use_dg   = op_key in DG_PNGS
-        self._op_key   = op_key
         self._labels   = LABELS.get(op_key, [])
         self._pixmap   = None
+        self._png_w    = 888
+        self._png_h    = 686
         self.setMinimumSize(100, 100)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setStyleSheet('background: rgb(145,145,149);')
         self.setMouseTracking(True)
         self._hover = ''
-        if self._use_dg:
-            png = DG_PNGS.get(op_key, '')
-            if os.path.exists(png):
-                self._pixmap = QPixmap(png)
-        elif HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+        info = OP_PNGS.get(op_key)
+        if info:
+            fname, self._png_w, self._png_h = info
+            p = os.path.join(TAB_DIR, fname)
+            if os.path.exists(p):
+                self._pixmap = QPixmap(p)
+        if self._pixmap is None and HAS_SVG and \
+                DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
             DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
     def mouseMoveEvent(self, event):
         rect = self._render_rect()
         if rect.contains(QPointF(event.pos())):
-            sw = self.SVG_DG_W if self._use_dg else self.SVG_W
-            sh = self.SVG_DG_H if self._use_dg else self.SVG_H
-            sx = int((event.x() - rect.x()) / rect.width()  * sw)
-            sy = int((event.y() - rect.y()) / rect.height() * sh)
+            sx = int((event.x() - rect.x()) / rect.width()  * self._png_w)
+            sy = int((event.y() - rect.y()) / rect.height() * self._png_h)
             self._hover = f'{sx}, {sy}'
         else:
             self._hover = ''
@@ -293,9 +299,7 @@ class DiagramWidget(QWidget):
         super().resizeEvent(event)
         h = event.size().height()
         if h > 20:
-            sw = self.SVG_DG_W if self._use_dg else self.SVG_W
-            sh = self.SVG_DG_H if self._use_dg else self.SVG_H
-            target_w = int(h * sw / sh)
+            target_w = int(h * self._png_w / self._png_h)
             if abs(self.width() - target_w) > 1:
                 self.setFixedWidth(target_w)
 
@@ -304,9 +308,7 @@ class DiagramWidget(QWidget):
         margin = 4
         aw = self.width()  - 2 * margin
         ah = self.height() - 2 * margin
-        sw = self.SVG_DG_W if self._use_dg else self.SVG_W
-        sh = self.SVG_DG_H if self._use_dg else self.SVG_H
-        svg_aspect = sw / sh
+        svg_aspect = self._png_w / self._png_h
         if aw / ah > svg_aspect:
             rw = ah * svg_aspect
             rh = ah
@@ -326,47 +328,25 @@ class DiagramWidget(QWidget):
 
         rect = self._render_rect()
 
-        if self._layer_id is None:
-            painter.setPen(QColor('#777'))
-            painter.setFont(QFont('Sans', 11))
-            painter.drawText(rect.toRect(), Qt.AlignCenter,
-                             'No diagram available')
-
-        elif self._use_dg and self._pixmap and not self._pixmap.isNull():
-            # Groove/drill: pre-rendered PNG (librsvg) — smooth edges + arrowheads
+        if self._pixmap and not self._pixmap.isNull():
             painter.setRenderHint(QPainter.SmoothPixmapTransform)
             painter.drawPixmap(rect.toRect(), self._pixmap)
-            sw, sh = self.SVG_DG_W, self.SVG_DG_H
             font = QFont('Sans', 8, QFont.Bold)
             painter.setFont(font)
             fm = painter.fontMetrics()
             for (sx, sy), text in self._labels:
-                wx = rect.left() + (sx / sw) * rect.width()
-                wy = rect.top()  + (sy / sh) * rect.height()
+                wx = rect.left() + (sx / self._png_w) * rect.width()
+                wy = rect.top()  + (sy / self._png_h) * rect.height()
                 tw = fm.horizontalAdvance(text) + 6
                 th = fm.height() + 2
                 bg = QRectF(wx - tw/2, wy - th/2, tw, th)
                 painter.fillRect(bg, QColor(255, 255, 180, 220))
                 painter.setPen(QPen(QColor('#111')))
                 painter.drawText(bg, Qt.AlignCenter, text)
-
-        elif not self._use_dg and DiagramWidget._shared_renderer and \
-                DiagramWidget._shared_renderer.isValid() and \
+        elif DiagramWidget._shared_renderer and \
+                DiagramWidget._shared_renderer.isValid() and self._layer_id and \
                 DiagramWidget._shared_renderer.elementExists(self._layer_id):
-            r = DiagramWidget._shared_renderer
-            r.render(painter, self._layer_id, rect)
-            font = QFont('Sans', 8, QFont.Bold)
-            painter.setFont(font)
-            fm = painter.fontMetrics()
-            for (sx, sy), text in self._labels:
-                wx = rect.left() + (sx / self.SVG_W) * rect.width()
-                wy = rect.top()  + (sy / self.SVG_H) * rect.height()
-                tw = fm.horizontalAdvance(text) + 6
-                th = fm.height() + 2
-                bg = QRectF(wx - tw/2, wy - th/2, tw, th)
-                painter.fillRect(bg, QColor(255, 255, 180, 220))
-                painter.setPen(QPen(QColor('#111')))
-                painter.drawText(bg, Qt.AlignCenter, text)
+            DiagramWidget._shared_renderer.render(painter, self._layer_id, rect)
         else:
             painter.setPen(QColor('#666'))
             painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
