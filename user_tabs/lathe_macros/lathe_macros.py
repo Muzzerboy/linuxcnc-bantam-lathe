@@ -671,7 +671,7 @@ class ThreadingPage(OpPage):
 
     def _fields(self):
         return [
-            ('x',     'Thread Diameter', 'Nominal OD (external) or bore (internal)', 'mm',    20.0, 'length'),
+            ('x',     'Thread Diameter', 'Nominal diameter — OD for external, bore for internal (not pilot hole)', 'mm', 20.0, 'length'),
             ('z',     'Finish Z',        'End of threaded section',                  'mm',     0.0, 'length'),
             ('pitch', 'Pitch',           'Distance between thread crests',           'mm',     1.0, 'pitch'),
             ('doc',   'Depth of Cut',   'First-pass depth (G76 j parameter)',       'mm',     0.1, 'length'),
