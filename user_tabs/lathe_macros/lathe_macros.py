@@ -31,7 +31,6 @@ except ImportError:
 
 TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
 SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
-SVG_V3     = os.path.join(TAB_DIR, 'LatheMacro_transparent.svg')  # raster, layers 6-7
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
 # Spinbox label positions in the SVG's 888×686 coordinate space.
@@ -83,8 +82,17 @@ LABELS = {
         ((380, 580), '(External - OD)'),
         ((525, 410), '(Internal - ID)'),
     ],
-    'groove':   [],   # positions to be set after viewing diagram
-    'drill':    [],
+    # Approximate positions — refine with hover tool
+    'groove': [
+        ((580, 173), 'Groove Z'),
+        ((790, 310), 'Groove Diameter'),
+    ],
+    'drill': [
+        (( 55, 315), 'Drill Diameter'),
+        ((560, 515), 'Drill Depth (Z)'),
+        ((685, 310), 'Peck Distance'),
+        ((705, 240), 'Feed Rate'),
+    ],
 }
 
 # SVG layer index per operation
@@ -241,24 +249,19 @@ class DiagramWidget(QWidget):
 
     SVG_W, SVG_H = 888, 686    # native SVG viewBox dimensions
     SVG_BG = QColor(145, 145, 149)
-    _shared_renderer    = None   # vector SVG — layers 0-5
-    _shared_renderer_v3 = None   # transparent raster V3 — layers 6-7
+    _shared_renderer = None
 
     def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
-        self._use_v3   = layer_idx >= 6
         self._labels   = LABELS.get(op_key, [])
         self.setMinimumSize(100, 100)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setStyleSheet('background: rgb(145,145,149);')
         self.setMouseTracking(True)
         self._hover = ''
-        if HAS_SVG:
-            if DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
-                DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
-            if DiagramWidget._shared_renderer_v3 is None and os.path.exists(SVG_V3):
-                DiagramWidget._shared_renderer_v3 = QSvgRenderer(SVG_V3)
+        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
 
     def mouseMoveEvent(self, event):
         rect = self._render_rect()
@@ -301,25 +304,15 @@ class DiagramWidget(QWidget):
 
         painter.fillRect(event.rect(), self.SVG_BG)
 
-        r = (DiagramWidget._shared_renderer_v3 if self._use_v3
-             else DiagramWidget._shared_renderer)
+        r = DiagramWidget._shared_renderer
         rect = self._render_rect()
 
         if self._layer_id is None:
-            # No SVG layer for this operation — show placeholder text
             painter.setPen(QColor('#777'))
             painter.setFont(QFont('Sans', 11))
             painter.drawText(rect.toRect(), Qt.AlignCenter,
                              'No diagram available')
         elif r and r.isValid() and r.elementExists(self._layer_id):
-            if self._use_v3:
-                # Raster layers have no vector background — draw one to match
-                from qtpy.QtGui import QRadialGradient, QBrush
-                grad = QRadialGradient(rect.center(),
-                                       max(rect.width(), rect.height()) * 0.75)
-                grad.setColorAt(0, QColor(155, 155, 155))
-                grad.setColorAt(1, QColor(115, 115, 115))
-                painter.fillRect(rect, QBrush(grad))
             r.render(painter, self._layer_id, rect)
 
             # Overlay dimension labels
