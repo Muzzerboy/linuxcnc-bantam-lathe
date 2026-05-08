@@ -312,6 +312,14 @@ class DiagramWidget(QWidget):
             painter.drawText(rect.toRect(), Qt.AlignCenter,
                              'No diagram available')
         elif r and r.isValid() and r.elementExists(self._layer_id):
+            if self._use_v3:
+                # Raster layers have no vector background — draw one to match
+                from qtpy.QtGui import QRadialGradient, QBrush
+                grad = QRadialGradient(rect.center(),
+                                       max(rect.width(), rect.height()) * 0.75)
+                grad.setColorAt(0, QColor(155, 155, 155))
+                grad.setColorAt(1, QColor(115, 115, 115))
+                painter.fillRect(rect, QBrush(grad))
             r.render(painter, self._layer_id, rect)
 
             # Overlay dimension labels
