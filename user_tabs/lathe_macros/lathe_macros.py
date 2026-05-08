@@ -33,12 +33,19 @@ TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
 SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
-# Pre-rendered PNGs for groove and drill only
-# (vector ops 0-5 use Qt SVG renderer — lines render at display resolution)
+# Pre-rendered PNGs for all 8 operations via librsvg
+# Vector ops rendered at ~600px wide (display resolution) so dimension
+# lines stay at the correct stroke weight without bilinear thinning.
 # Format: {op_key: (filename, label_coord_w, label_coord_h)}
 OP_PNGS = {
-    'groove': ('groove_rendered.png', 1500, 1000),
-    'drill':  ('drill_rendered.png',  1500, 1000),
+    'turning':   ('turning_rendered.png',   888,  686),
+    'boring':    ('boring_rendered.png',    888,  686),
+    'facing':    ('facing_rendered.png',    888,  686),
+    'chamfer':   ('chamfer_rendered.png',   888,  686),
+    'radius':    ('radius_rendered.png',    888,  686),
+    'threading': ('threading_rendered.png', 888,  686),
+    'groove':    ('groove_rendered.png',   1500, 1000),
+    'drill':     ('drill_rendered.png',    1500, 1000),
 }
 
 # Spinbox label positions in the SVG's 888×686 coordinate space.
@@ -323,38 +330,31 @@ class DiagramWidget(QWidget):
 
         rect = self._render_rect()
 
-        def _draw_labels(sw, sh):
+        if self._pixmap and not self._pixmap.isNull():
+            painter.setRenderHint(QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(rect.toRect(), self._pixmap)
+        elif DiagramWidget._shared_renderer and \
+                DiagramWidget._shared_renderer.isValid() and self._layer_id and \
+                DiagramWidget._shared_renderer.elementExists(self._layer_id):
+            DiagramWidget._shared_renderer.render(painter, self._layer_id, rect)
+        else:
+            painter.setPen(QColor('#666'))
+            painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
+
+        # Yellow dimension labels
+        if self._labels and (self._pixmap or DiagramWidget._shared_renderer):
             font = QFont('Sans', 8, QFont.Bold)
             painter.setFont(font)
             fm = painter.fontMetrics()
             for (sx, sy), text in self._labels:
-                wx = rect.left() + (sx / sw) * rect.width()
-                wy = rect.top()  + (sy / sh) * rect.height()
+                wx = rect.left() + (sx / self._png_w) * rect.width()
+                wy = rect.top()  + (sy / self._png_h) * rect.height()
                 tw = fm.horizontalAdvance(text) + 6
                 th = fm.height() + 2
                 bg = QRectF(wx - tw/2, wy - th/2, tw, th)
                 painter.fillRect(bg, QColor(255, 255, 180, 220))
                 painter.setPen(QPen(QColor('#111')))
                 painter.drawText(bg, Qt.AlignCenter, text)
-
-        if self._pixmap and not self._pixmap.isNull():
-            # Groove / drill: pre-rendered PNG
-            painter.setRenderHint(QPainter.SmoothPixmapTransform)
-            painter.drawPixmap(rect.toRect(), self._pixmap)
-            _draw_labels(self._png_w, self._png_h)
-        elif self._layer_id is None:
-            painter.setPen(QColor('#777'))
-            painter.setFont(QFont('Sans', 11))
-            painter.drawText(rect.toRect(), Qt.AlignCenter, 'No diagram available')
-        elif DiagramWidget._shared_renderer and \
-                DiagramWidget._shared_renderer.isValid() and \
-                DiagramWidget._shared_renderer.elementExists(self._layer_id):
-            # Vector ops 0-5: Qt SVG renderer at display resolution
-            DiagramWidget._shared_renderer.render(painter, self._layer_id, rect)
-            _draw_labels(self._png_w, self._png_h)
-        else:
-            painter.setPen(QColor('#666'))
-            painter.drawText(event.rect(), Qt.AlignCenter, 'Diagram unavailable')
 
         # Coordinate readout (hover tool for label positioning)
         if self._hover:
