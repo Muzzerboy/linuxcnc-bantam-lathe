@@ -82,16 +82,16 @@ LABELS = {
         ((380, 580), '(External - OD)'),
         ((525, 410), '(Internal - ID)'),
     ],
-    # Approximate positions — refine with hover tool
+    # Approximate — refine with hover tool
     'groove': [
-        ((580, 173), 'Groove Z'),
-        ((790, 310), 'Groove Diameter'),
+        ((565, 178), 'Groove Z'),
+        ((768, 303), 'Groove Diameter'),
     ],
     'drill': [
-        (( 55, 315), 'Drill Diameter'),
-        ((560, 515), 'Drill Depth (Z)'),
-        ((685, 310), 'Peck Distance'),
-        ((705, 240), 'Feed Rate'),
+        ((663, 310), 'Drill Diameter'),
+        ((574, 503), 'Drill Depth (Z)'),
+        ((722, 317), 'Peck Distance'),
+        ((800, 162), 'Feed Rate'),
     ],
 }
 
