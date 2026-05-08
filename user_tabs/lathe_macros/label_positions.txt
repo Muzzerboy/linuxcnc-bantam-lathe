@@ -26,8 +26,8 @@ FACING
   Depth of Cut       →570,590
 
 CHAMFER
-  Diameter at Corner →575,415
-  Z at Corner        →160,260
+  Diameter at Corner →660,470
+  Z at Corner        →160,290
   Chamfer Size       →535,335
   Front Outside      →800,200
   Front Inside       →750,350
