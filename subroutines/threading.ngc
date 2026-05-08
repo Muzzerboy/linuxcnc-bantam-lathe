@@ -5,7 +5,6 @@ o<threading> sub
 
 #<threading_ss> = #1
 #<threading_maxrpm>= #2
-#<threading_feed>= #3
 #<threading_doc>= #4
 #<threading_tool>= #5
 #<threading_coolant>= #6
@@ -31,7 +30,7 @@ G90 ; Absolute Distance
 #<threading_x> = [#<threading_x> / 2.0]
 #<starting_X> = [#<_x> * 2] (starting X)
 #<starting_Z> = #<_z> (starting Z)
-G97 D#<threading_maxrpm> S#<threading_ss> ; Constant RPM mode (threading requires constant RPM)
+G96 D#<threading_maxrpm> S#<threading_ss> ; Constant Surface Speed
 M3            ; Start Spindle
 G4 P1         ; Wait to reach speed
 
@@ -69,7 +68,6 @@ G95 F#<flatfeed> ; Feed-Per-Rev Mode
             G1 Z #<threading_z>
             G0 X [#<threading_x> - #<height>]
             G0 Z #<starting_Z>
-            G96 D#<threading_maxrpm> S#<threading_feed> ; limit RPM in threading mode
             G76 P#<threading_pitch> Z#<threading_z> i#<minorflat> j#<cutdepth> k#<threaddepth> H3 R1.5 Q29.5 E0 L0
             G0 X [#<threading_x> - 0.5]
         o300 else ;external
@@ -81,7 +79,6 @@ G95 F#<flatfeed> ; Feed-Per-Rev Mode
             G1 Z #<threading_z>
             G0 X #<threading_x>
             G0 Z #<starting_Z>
-            G96 D#<threading_maxrpm> S#<threading_feed> ; limit RPM in threading mode
             G76 P#<threading_pitch> Z#<threading_z> i[-#<majorflat>] j#<cutdepth> k#<threaddepth> H3 R1.5 Q29.5 E0 L0
             G0 X [#<threading_x> + 0.5]
         o300 endif

@@ -675,8 +675,8 @@ class ThreadingPage(OpPage):
             ('z',     'Finish Z',        'End of threaded section',                  'mm',     0.0, 'length'),
             ('pitch', 'Pitch',           'Distance between thread crests',           'mm',     1.0, 'pitch'),
             ('doc',   'Depth of Cut',   'First-pass depth (G76 j parameter)',       'mm',     0.1, 'length'),
-            ('ss',    'Speed',           'Spindle RPM (not surface speed)',          'RPM',   50.0, 'int'),
-            ('maxrpm','Max RPM',         'RPM limit',                                'RPM',  200.0, 'int'),
+            ('ss',    'Surface Speed',    'Cutting speed at tool tip',                'm/min', 100.0, 'speed'),
+            ('maxrpm','Max RPM',         'RPM limit (G96 D parameter)',              'RPM',  400.0, 'int'),
             ('tool',  'Tool Number',     '',                                         '',       5.0, 'int'),
             ('coolant','Coolant',        '0 = off, 1 = on',                         '',       0.0, 'int'),
         ]
