@@ -55,5 +55,5 @@ DRILLING
   Peck Distance      →
 
 GROOVING
-  Groove Diameter    →
+  Groove Diameter    →1050,600
   Groove Z           →

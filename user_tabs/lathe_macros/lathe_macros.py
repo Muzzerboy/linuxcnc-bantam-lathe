@@ -97,8 +97,8 @@ LABELS = {
     ],
     # Approximate in 1500x1000 space — refine with hover tool
     'groove': [
+        ((1050, 600), 'Groove Diameter'),
         (( 800, 240), 'Groove Z'),
-        ((1350, 450), 'Groove Diameter'),
     ],
     'drill': [
         ((1150, 450), 'Drill Diameter'),
