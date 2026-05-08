@@ -674,6 +674,7 @@ class ThreadingPage(OpPage):
             ('x',     'Thread Diameter', 'Nominal OD (external) or bore (internal)', 'mm',    20.0, 'length'),
             ('z',     'Finish Z',        'End of threaded section',                  'mm',     0.0, 'length'),
             ('pitch', 'Pitch',           'Distance between thread crests',           'mm',     1.0, 'pitch'),
+            ('doc',   'Depth of Cut',   'First-pass depth (G76 j parameter)',       'mm',     0.1, 'length'),
             ('ss',    'Speed',           'Spindle RPM (not surface speed)',          'RPM',   50.0, 'int'),
             ('maxrpm','Max RPM',         'RPM limit',                                'RPM',  200.0, 'int'),
             ('tool',  'Tool Number',     '',                                         '',       5.0, 'int'),
@@ -726,7 +727,7 @@ class ThreadingPage(OpPage):
 
     def _call(self, f):
         tid = 1.0 if self.rb_int.isChecked() else 0.0
-        return (f"O<threading> call [{f['ss']}] [{f['maxrpm']}] [1.0] [0.1] "
+        return (f"O<threading> call [{f['ss']}] [{f['maxrpm']}] [1.0] [{f['doc']}] "
                 f"[{f['tool']}] [{f['coolant']}] [0] [0] "
                 f"[{f['x']}] [{f['z']}] [{f['pitch']}] [{tid}]")
 

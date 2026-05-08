@@ -45,11 +45,16 @@ G4 P1         ; Wait to reach speed
 #<threaddepth> = [#<height> * 0.625]
 ;(DEBUG,#<height> #<majorflat> #<minorflat> #<threaddepth>)
 
+        o205 if [#<threading_doc> LE 0]
+             (MSG,ERROR : Depth of cut must be greater than zero)
+        o205 return [-2]
+        o205 endif
+
         o200 if [#<_metric>]
-            #<cutdepth> = 0.2
+            #<cutdepth> = #<threading_doc>
             #<flatfeed> = 0.1
         o200 else
-            #<cutdepth> = 0.007
+            #<cutdepth> = #<threading_doc>
             #<flatfeed> = 0.004
         o200 endif
 
