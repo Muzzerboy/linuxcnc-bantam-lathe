@@ -37,61 +37,53 @@ STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 # Derived from Andy Pugh's original lathemacro.ui, scaled to viewBox coords.
 LABELS = {
     'turning': [
-        ((592, 449), 'Finish Diameter'),
-        ((376, 471), 'Feed Rate'),
-        ((474, 158), 'End Radius'),
-        ((486, 592), 'Depth of Cut'),
-        (( 74, 291), 'Finish Z'),
-        ((308, 325), 'Taper Angle'),
+        ((720, 590), 'Finish Diameter'),
+        (( 50, 400), 'Finish Z'),
+        ((550, 160), 'End Radius'),
+        ((330, 380), 'Taper Angle'),
+        ((390, 510), 'Feed Rate'),
+        ((500, 610), 'Depth of Cut'),
     ],
     'boring': [
-        ((414, 192), 'Taper Angle'),
-        ((249, 357), 'Run-out Radius'),
-        ((639, 423), 'Finish Bore Dia'),
-        ((533, 566), 'Depth of Cut'),
-        ((314, 563), 'Feed Rate'),
-        ((162, 183), 'Finish Z'),
+        ((720, 570), 'Finish Bore Dia'),
+        (( 60, 350), 'Finish Z'),
+        ((500, 350), 'Run-out Radius'),
+        ((340, 350), 'Taper Angle'),
+        ((400, 500), 'Feed Rate'),
+        ((550, 650), 'Depth of Cut'),
     ],
     'facing': [
-        (( 92, 277), 'Finish Z'),
-        ((660, 429), 'Finish Diameter'),
-        ((519, 608), 'Feed Rate'),
-        ((241, 521), 'Depth of Cut'),
-        ((618, 250), 'Face Angle'),
+        ((680, 520), 'Finish Diameter'),
+        (( 85, 320), 'Finish Z'),
+        ((485, 446), 'Face Angle'),
+        ((370, 580), 'Feed Rate'),
+        ((570, 590), 'Depth of Cut'),
     ],
     'radius': [
-        ((603, 463), 'Diameter at Corner'),
-        ((120, 229), 'Z at Corner'),
-        ((502, 309), 'Radius Size'),
-        ((511, 431), 'Front Inside'),
-        ((452, 467), 'Front Outside'),
-        ((198, 307), 'Rear Outside'),
+        ((680, 440), 'Diameter at Corner'),
+        ((110, 300), 'Z at Corner'),
+        ((590, 300), 'Radius Size'),
+        ((490, 560), 'Front Outside'),
+        ((610, 490), 'Front Inside'),
+        ((140, 429), 'Rear Outside'),
     ],
     'chamfer': [
-        ((120, 229), 'Z at Corner'),
-        ((658, 197), 'Chamfer Size'),
-        ((612, 465), 'Diameter at Corner'),
-        ((198, 307), 'Rear Outside'),
-        ((452, 467), 'Front Outside'),
-        ((511, 431), 'Front Inside'),
+        ((575, 415), 'Diameter at Corner'),
+        ((160, 260), 'Z at Corner'),
+        ((535, 335), 'Chamfer Size'),
+        ((800, 200), 'Front Outside'),
+        ((750, 350), 'Front Inside'),
+        ((140, 370), 'Rear Outside'),
     ],
     'threading': [
-        ((159, 234), 'Finish Z'),
-        ((386, 505), 'External (OD)'),
-        ((447, 413), 'Internal (ID)'),
-        ((598, 517), 'Thread Diameter'),
-        ((114, 423), 'Thread Pitch'),
+        ((650, 555), 'Thread Diameter'),
+        (( 65, 310), 'Finish Z'),
+        ((320, 535), 'Thread Pitch'),
+        ((380, 580), 'External (OD)'),
+        ((525, 410), 'Internal (ID)'),
     ],
-    'drill': [
-        ((710, 185), 'Drill Diameter'),
-        ((154, 171), 'Drill Depth (Z)'),
-        ((456, 617), 'Feed Rate'),
-        ((178, 488), 'Peck Distance'),
-    ],
-    'tapping': [
-        ((642, 461), 'Tap Diameter'),
-        ((384, 593), 'Thread Pitch'),
-    ],
+    'drill':    [],   # no coordinates yet — fill in after diagram is fixed
+    'tapping':  [],
 }
 
 # SVG layer index per operation (Andy's original layer order, layers 0-5)
@@ -305,11 +297,14 @@ class DiagramWidget(QWidget):
         r = DiagramWidget._shared_renderer
         rect = self._render_rect()
 
-        if r and r.isValid():
-            if self._layer_id and r.elementExists(self._layer_id):
-                r.render(painter, self._layer_id, rect)
-            else:
-                r.render(painter, rect)
+        if self._layer_id is None:
+            # No SVG layer for this operation — show placeholder text
+            painter.setPen(QColor('#777'))
+            painter.setFont(QFont('Sans', 11))
+            painter.drawText(rect.toRect(), Qt.AlignCenter,
+                             'No diagram available')
+        elif r and r.isValid() and r.elementExists(self._layer_id):
+            r.render(painter, self._layer_id, rect)
 
             # Overlay dimension labels
             font = QFont('Sans', 8, QFont.Bold)

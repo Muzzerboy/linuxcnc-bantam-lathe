@@ -1,0 +1,59 @@
+# Lathe Cycles — label centre positions (SVG coordinate space 888 x 686)
+# Format:  Label name  →  x, y
+# Hover over the diagram to read coordinates, then fill in the numbers.
+
+TURNING
+  Finish Diameter    →720,590
+  Finish Z           →50,400
+  End Radius         →550,160
+  Taper Angle        →330,380
+  Feed Rate          →390,510
+  Depth of Cut       →500,610
+
+BORING
+  Finish Bore Dia    →720,570
+  Finish Z           →60,350
+  Run-out Radius     →500,350
+  Taper Angle        →340,350
+  Feed Rate          →400,500
+  Depth of Cut       →550,650
+
+FACING
+  Finish Diameter    →680,520
+  Finish Z           →85,320
+  Face Angle         →485,446
+  Feed Rate          →370,580
+  Depth of Cut       →570,590
+
+CHAMFER
+  Diameter at Corner →575,415
+  Z at Corner        →160,260
+  Chamfer Size       →535,335
+  Front Outside      →800,200
+  Front Inside       →750,350
+  Rear Outside       →140,370
+
+RADIUS
+  Diameter at Corner →680,440
+  Z at Corner        →110,300
+  Radius Size        →590,300
+  Front Outside      →490,560
+  Front Inside       →610,490
+  Rear Outside       →140,429
+
+THREADING
+  Thread Diameter    →650,555
+  Finish Z           →65,310
+  Thread Pitch       →320,535
+  External (OD)      →380,580
+  Internal (ID)      →525,410
+
+DRILLING
+  Drill Diameter     →
+  Drill Depth (Z)    →
+  Feed Rate          →
+  Peck Distance      →
+
+TAPPING
+  Tap Diameter       →
+  Thread Pitch       →
