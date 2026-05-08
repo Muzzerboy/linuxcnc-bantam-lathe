@@ -97,16 +97,16 @@ LABELS = {
         ((380, 580), '(External - OD)'),
         ((525, 410), '(Internal - ID)'),
     ],
-    # Approximate in 1500x1000 space — refine with hover tool
     'groove': [
         ((1050, 600), 'Groove Diameter'),
-        (( 800, 240), 'Groove Z'),
+        (( 800, 240), 'Groove Z'),        # position TBD
+        (( 680, 885), 'Feed Rate'),
     ],
     'drill': [
-        ((1150, 450), 'Drill Diameter'),
-        (( 950, 750), 'Drill Depth (Z)'),
-        ((1230, 460), 'Peck Distance'),
-        ((1350, 230), 'Feed Rate'),
+        ((1250, 270), 'Drill Diameter'),
+        (( 370, 240), 'Drill Depth (Z)'),
+        (( 770, 910), 'Feed Rate'),
+        (( 300, 700), 'Peck Distance'),
     ],
 }
 

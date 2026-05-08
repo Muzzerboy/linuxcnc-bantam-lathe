@@ -49,11 +49,12 @@ THREADING
   Internal (ID)      →525,410
 
 DRILLING
-  Drill Diameter     →
-  Drill Depth (Z)    →
-  Feed Rate          →
-  Peck Distance      →
+  Drill Diameter     →1250,270
+  Drill Depth (Z)    →370,240
+  Feed Rate          →770,910
+  Peck Distance      →300,700
 
 GROOVING
   Groove Diameter    →1050,600
   Groove Z           →
+  Feed Rate          →680,885
