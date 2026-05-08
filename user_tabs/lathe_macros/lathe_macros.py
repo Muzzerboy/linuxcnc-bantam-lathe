@@ -31,6 +31,7 @@ except ImportError:
 
 TAB_DIR    = os.path.dirname(os.path.abspath(__file__))
 SVG_FILE   = os.path.join(TAB_DIR, 'LatheMacro_vector.svg')
+SVG_V3     = os.path.join(TAB_DIR, 'LatheMacro_transparent.svg')  # raster, layers 6-7
 STATE_FILE = os.path.join(TAB_DIR, 'state.json')
 
 # Spinbox label positions in the SVG's 888×686 coordinate space.
@@ -82,12 +83,12 @@ LABELS = {
         ((380, 580), '(External - OD)'),
         ((525, 410), '(Internal - ID)'),
     ],
-    'drill':    [],   # no coordinates yet — fill in after diagram is fixed
-    'tapping':  [],
+    'groove':   [],   # positions to be set after viewing diagram
+    'drill':    [],
 }
 
-# SVG layer index per operation (Andy's original layer order, layers 0-5)
-# drill and tapping have no dedicated layer — fall back to full SVG render
+# SVG layer index per operation
+# Layers 0-5: pure vector SVG  |  Layers 6-7: transparent raster V3 SVG
 LAYER = {
     'turning':   0,
     'boring':    1,
@@ -95,8 +96,8 @@ LAYER = {
     'radius':    3,
     'chamfer':   4,
     'threading': 5,
-    'drill':     -1,
-    'tapping':   -1,
+    'groove':    6,
+    'drill':     7,
 }
 
 STYLE = """
@@ -196,19 +197,20 @@ INSTRUCTIONS = {
         "4. Select External or Internal.\n\n"
         "5. Press RUN."
     ),
+    'groove': (
+        "1. Select a grooving tool (Tool Number).\n\n"
+        "2. Set Groove Diameter to the finished diameter at the groove bottom.\n\n"
+        "3. Set Groove Z to the Z position of the groove centre.\n\n"
+        "4. Use a low Feed Rate (typically 0.03–0.08 mm/rev).\n\n"
+        "5. Position the tool at the stock OD.\n\n"
+        "6. Press RUN."
+    ),
     'drill': (
         "1. Select a drill bit (Tool Number).\n\n"
         "2. Centre-drill first if needed.\n\n"
         "3. Set Drill Diameter, Drill Depth Z (negative) and Peck Distance (0 = no pecking).\n\n"
         "4. Set Surface Speed and Feed Rate.\n\n"
         "5. Press RUN."
-    ),
-    'tapping': (
-        "1. Select a tap in a tension-compression holder (Tool Number).\n\n"
-        "2. Set Tap Diameter, Tap Depth Z (negative) and Thread Pitch.\n\n"
-        "3. Use a low Spindle Speed (30–100 RPM).\n\n"
-        "4. Pre-drill to the correct tapping diameter.\n\n"
-        "5. Press RUN. The spindle reverses automatically on retract."
     ),
 }
 
@@ -238,20 +240,25 @@ class DiagramWidget(QWidget):
     """Renders one layer of Andy Pugh's LatheMacro_vector.svg with labels."""
 
     SVG_W, SVG_H = 888, 686    # native SVG viewBox dimensions
-    SVG_BG = QColor(145, 145, 149)   # SVG's own background colour
-    _shared_renderer = None
+    SVG_BG = QColor(145, 145, 149)
+    _shared_renderer    = None   # vector SVG — layers 0-5
+    _shared_renderer_v3 = None   # transparent raster V3 — layers 6-7
 
     def __init__(self, op_key, layer_idx, parent=None):
         super().__init__(parent)
         self._layer_id = f'layer{layer_idx}' if layer_idx >= 0 else None
-        self._labels = LABELS.get(op_key, [])
+        self._use_v3   = layer_idx >= 6
+        self._labels   = LABELS.get(op_key, [])
         self.setMinimumSize(100, 100)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setStyleSheet('background: rgb(145,145,149);')
         self.setMouseTracking(True)
         self._hover = ''
-        if HAS_SVG and DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
-            DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+        if HAS_SVG:
+            if DiagramWidget._shared_renderer is None and os.path.exists(SVG_FILE):
+                DiagramWidget._shared_renderer = QSvgRenderer(SVG_FILE)
+            if DiagramWidget._shared_renderer_v3 is None and os.path.exists(SVG_V3):
+                DiagramWidget._shared_renderer_v3 = QSvgRenderer(SVG_V3)
 
     def mouseMoveEvent(self, event):
         rect = self._render_rect()
@@ -294,7 +301,8 @@ class DiagramWidget(QWidget):
 
         painter.fillRect(event.rect(), self.SVG_BG)
 
-        r = DiagramWidget._shared_renderer
+        r = (DiagramWidget._shared_renderer_v3 if self._use_v3
+             else DiagramWidget._shared_renderer)
         rect = self._render_rect()
 
         if self._layer_id is None:
@@ -751,9 +759,9 @@ def _drill_call(f):
             f"[{f['feed']}] [{f['tool']}] [{f['peck']}] [0] "
             f"[{f['coolant']}] [0] [0] [{f['maxrpm']}] [21]")
 
-def _tapping_call(f):
-    return (f"O<tapping> call [{f['dia']}] [{f['z']}] [{f['ss']}] "
-            f"[{f['pitch']}] [{f['tool']}] [{f['coolant']}] [{f['ramp']}]")
+def _groove_call(f):
+    return (f"O<grooving> call [{f['x']}] [{f['ss']}] [{f['feed']}] "
+            f"[{f['tool']}] [{f['coolant']}] [{f['z']}] [{f['maxrpm']}]")
 
 
 # ---------------------------------------------------------------------------
@@ -876,15 +884,15 @@ class UserTab(QWidget):
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _drill_call, 'Drilling')
 
-        add('tapping', LAYER['tapping'], [
-            ('dia',   'Tap Diameter',        'Nominal tap diameter',               'mm',    10.0, 'length'),
-            ('z',     'Tap Depth (Z)',       'Z coordinate of tap bottom',        'mm',     0.0, 'length'),
-            ('pitch', 'Thread Pitch',        'Distance between thread crests',    'mm',     1.0, 'pitch'),
-            ('ss',    'Spindle Speed',       'RPM (low — typically 30-100)',      'RPM',   30.0, 'int'),
-            ('tool',  'Tool Number',         '',                                  '',       1.0, 'int'),
-            ('coolant','Coolant',            '0 = off,  1 = on',                 '',       0.0, 'int'),
-            ('ramp',  'Ramp Distance',       'Spindle acceleration allowance',    'mm',     5.0, 'length'),
-        ], _tapping_call, 'Tapping')
+        add('groove', LAYER['groove'], [
+            ('x',      'Groove Diameter',    'Finished diameter at groove bottom', 'mm',     0.0, 'length'),
+            ('z',      'Groove Z',           'Z position of groove centre',        'mm',     0.0, 'length'),
+            ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'speed'),
+            ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
+            ('feed',   'Feed Rate',          'Feed per rev (typically 0.03–0.08)', 'mm/rev', 0.05,'feed'),
+            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
+            ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
+        ], _groove_call, 'Grooving')
 
         self.tabs = tabs
 

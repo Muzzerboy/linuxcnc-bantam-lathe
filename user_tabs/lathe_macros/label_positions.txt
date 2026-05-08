@@ -54,6 +54,6 @@ DRILLING
   Feed Rate          →
   Peck Distance      →
 
-TAPPING
-  Tap Diameter       →
-  Thread Pitch       →
+GROOVING
+  Groove Diameter    →
+  Groove Z           →

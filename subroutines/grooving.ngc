@@ -1,0 +1,67 @@
+;grooving
+;
+; Parameters:
+;   #1  groove diameter (finished OD at groove bottom)
+;   #2  surface speed (m/min, G96)
+;   #3  feed rate (mm/rev)
+;   #4  tool number
+;   #5  coolant (0=off, 1=on)
+;   #6  groove Z position (absolute)
+;   #7  max RPM (G96 D parameter)
+
+O<grooving> sub
+
+  o<backup_status> call
+
+#<grooving_x>      = #1
+#<grooving_ss>     = #2
+#<grooving_feed>   = #3
+#<grooving_tool>   = #4
+#<grooving_cool>   = #5
+#<grooving_z>      = #6
+#<grooving_maxrpm> = #7
+
+        o100 if [#<grooving_tool> NE #<_current_tool>]
+             (MSG,ERROR : Set tool before running groove macro)
+        o100 return [-2]
+        o100 endif
+
+        o105 if [#<grooving_x> LE 0]
+             (MSG,ERROR : Groove diameter must be greater than zero)
+        o105 return [-2]
+        o105 endif
+
+G8  ; Radius mode
+G18 ; XZ Plane
+G21 ; Metric
+G90 ; Absolute Distance
+G91.1
+
+#<grooving_x> = [#<grooving_x> / 2] ; convert diameter to radius
+#<start_x>    = [#<_x>]             ; retract X after groove
+#<start_z>    = [#<_z>]             ; retract Z after groove
+
+G96 D#<grooving_maxrpm> S#<grooving_ss> ; Constant Surface Speed
+M3
+G95 F#<grooving_feed>
+
+        o110 if [#<grooving_cool> GT 0.5]
+             M8
+        o110 endif
+
+G4 P1 ; wait to reach speed
+
+G0 Z#<grooving_z>          ; move to groove Z
+G1 X#<grooving_x>          ; plunge to groove diameter
+G0 X#<start_x>             ; retract
+G0 Z#<start_z>             ; return to start Z
+
+M5
+M9
+G7 ; restore diameter mode
+
+o<backup_restore> call
+
+O<grooving> endsub
+
+M2
