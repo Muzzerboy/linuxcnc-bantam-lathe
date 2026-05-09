@@ -356,14 +356,6 @@ class DiagramWidget(QWidget):
                 painter.setPen(QPen(QColor('#111')))
                 painter.drawText(bg, Qt.AlignCenter, text)
 
-        # Coordinate readout (hover tool for label positioning)
-        if self._hover:
-            painter.setFont(QFont('Monospace', 9))
-            painter.setPen(QPen(QColor('#000')))
-            painter.fillRect(QRectF(rect.right()-90, rect.top()+4, 86, 18),
-                             QColor(255, 255, 200, 210))
-            painter.drawText(QRectF(rect.right()-90, rect.top()+4, 86, 18),
-                             Qt.AlignCenter, self._hover)
 
         painter.end()
 
