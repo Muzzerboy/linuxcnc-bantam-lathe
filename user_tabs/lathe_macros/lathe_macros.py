@@ -609,9 +609,11 @@ class RadioOpPage(OpPage):
         rl.addWidget(lbl)
         for i, (key, label) in enumerate(self._radio_defs):
             rb = QRadioButton(label)
-            if i == 0: rb.setChecked(True)
             self.radio_group.addButton(rb, i)
             self.radios[key] = rb; rl.addWidget(rb)
+        if self.radios:
+            first_rb = next(iter(self.radios.values()))
+            first_rb.setChecked(True)
 
         rl.addStretch()
         self.status = QLabel(''); self.status.setWordWrap(True)
@@ -633,8 +635,12 @@ class RadioOpPage(OpPage):
         outer.addWidget(right, 1)
 
     def selected_radio(self):
+        btn = self.radio_group.checkedButton()
+        if btn is None:
+            return None
         for key, rb in self.radios.items():
-            if rb.isChecked(): return key
+            if rb is btn:
+                return key
         return None
 
     def state(self):
