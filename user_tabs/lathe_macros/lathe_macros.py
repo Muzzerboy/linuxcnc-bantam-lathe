@@ -635,12 +635,8 @@ class RadioOpPage(OpPage):
         outer.addWidget(right, 1)
 
     def selected_radio(self):
-        btn = self.radio_group.checkedButton()
-        if btn is None:
-            return None
         for key, rb in self.radios.items():
-            if rb is btn:
-                return key
+            if rb.isChecked(): return key
         return None
 
     def state(self):
