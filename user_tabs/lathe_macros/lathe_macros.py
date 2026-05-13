@@ -386,6 +386,7 @@ class NumpadDialog(QDialog):
                         ('8',1),('5',1),('2',1),('.',1),
                         ('9',2),('6',2),('3',2),('+/-',2)]:
             b = QPushButton(text)
+            b.setAutoDefault(False)
             b.clicked.connect(lambda _, t=text: self._digit(t))
             col[c].addWidget(b)
         for c in col: grid.addLayout(c)
@@ -409,7 +410,10 @@ class NumpadDialog(QDialog):
         r2 = QHBoxLayout()
         can = QPushButton('Cancel'); can.setObjectName('can')
         ok  = QPushButton('OK');     ok.setObjectName('ok')
+        can.setAutoDefault(False)
+        ok.setDefault(True)
         can.clicked.connect(self.reject); ok.clicked.connect(self.accept)
+        self.display.returnPressed.connect(self.accept)
         r2.addWidget(can); r2.addWidget(ok); outer.addLayout(r2)
 
     def _digit(self, t):
