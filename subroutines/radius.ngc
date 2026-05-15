@@ -62,7 +62,7 @@ G4 P1
                   #<temp> = [#<temp> + #<radius_doc>]
                   G0 X[#<radius_x> - #<temp>] Z#<starting_Z>
                   G1 Z#<radius_z>
-                  G3 X#<radius_x> Z[#<radius_z> - #<temp>] I#<temp> K0
+                  G2 X#<radius_x> Z[#<radius_z> - #<temp>] I#<temp> K0
                   G1 X#<starting_X>
                   G0 Z#<starting_Z>
              o201 endwhile
@@ -70,7 +70,7 @@ G4 P1
              G0 X#<starting_X> Z#<starting_Z>
              G0 X[#<radius_x> - #<radius_exterior_front>]
              G1 Z#<radius_z>
-             G3 X#<radius_x> Z[#<radius_z> - #<radius_exterior_front>] I#<radius_exterior_front> K0
+             G2 X#<radius_x> Z[#<radius_z> - #<radius_exterior_front>] I#<radius_exterior_front> K0
              G1 X#<starting_X>
              G0 Z#<starting_Z>
 
@@ -80,7 +80,7 @@ G4 P1
                   #<temp> = [#<temp> + #<radius_doc>]
                   G0 X[#<radius_x> + #<temp>] Z#<starting_Z>
                   G1 Z#<radius_z>
-                  G2 X#<radius_x> Z[#<radius_z> - #<temp>] I[-#<temp>] K0
+                  G3 X#<radius_x> Z[#<radius_z> - #<temp>] I[-#<temp>] K0
                   G1 X#<starting_X>
                   G0 Z#<starting_Z>
              o202 endwhile
@@ -88,7 +88,7 @@ G4 P1
              G0 X#<starting_X> Z#<starting_Z>
              G0 X[#<radius_x> + #<radius_interior>]
              G1 Z#<radius_z>
-             G2 X#<radius_x> Z[#<radius_z> - #<radius_interior>] I[-#<radius_interior>] K0
+             G3 X#<radius_x> Z[#<radius_z> - #<radius_interior>] I[-#<radius_interior>] K0
              G1 X#<starting_X>
              G0 Z#<starting_Z>
 
@@ -98,7 +98,7 @@ G4 P1
                   #<temp> = [#<temp> + #<radius_doc>]
                   G0 X[#<radius_x> - #<temp>] Z#<starting_Z>
                   G1 Z#<radius_z>
-                  G2 X#<radius_x> Z[#<radius_z> + #<temp>] I#<temp> K0
+                  G3 X#<radius_x> Z[#<radius_z> + #<temp>] I#<temp> K0
                   G1 X#<starting_X>
                   G0 Z#<starting_Z>
              o203 endwhile
@@ -106,7 +106,7 @@ G4 P1
              G0 X#<starting_X> Z#<starting_Z>
              G0 X[#<radius_x> - #<radius_exterior_rear>]
              G1 Z#<radius_z>
-             G2 X#<radius_x> Z[#<radius_z> + #<radius_exterior_rear>] I#<radius_exterior_rear> K0
+             G3 X#<radius_x> Z[#<radius_z> + #<radius_exterior_rear>] I#<radius_exterior_rear> K0
              G1 X#<starting_X>
              G0 Z#<starting_Z>
 

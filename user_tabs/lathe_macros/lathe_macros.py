@@ -178,62 +178,66 @@ QPushButton#can  { background: #5a1a1a; font-size: 16pt; min-height: 50px; }
 
 INSTRUCTIONS = {
     'turning': (
-        "1. Select a turning tool (Tool Number).\n\n"
-        "2. Touch off Z=0 at the workpiece face.\n\n"
-        "3. Position tool tip at the stock OD at your start Z.\n\n"
-        "4. Set Finish Diameter (target OD) and Finish Z (end of cut, negative = left).\n\n"
-        "5. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
-        "6. Press RUN."
+        "1. Touch off Z=0 at the workpiece face.\n\n"
+        "2. Position tool tip at the stock OD at your start Z.\n\n"
+        "3. Set Finish Diameter (target OD) and Finish Z (end of cut, negative = left).\n\n"
+        "4. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "5. Press RUN."
     ),
     'boring': (
-        "1. Select a boring bar (Tool Number).\n\n"
-        "2. Position tool tip inside the bore at the entry face.\n\n"
-        "3. Set Finish Bore Dia (target bore diameter) and Finish Z (bore bottom, negative).\n\n"
-        "4. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
-        "5. Press RUN."
+        "1. Position tool tip inside the bore at the entry face.\n\n"
+        "2. Set Finish Bore Dia (target bore diameter) and Finish Z (bore bottom, negative).\n\n"
+        "3. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "4. Press RUN.\n\n"
+        "Note: the tool will be at Finish Bore Dia when complete. "
+        "The retract distance between passes is set by Depth of Cut."
     ),
     'facing': (
-        "1. Select a facing tool (Tool Number).\n\n"
-        "2. Position tool at the outer edge of the stock, lightly touching the face.\n\n"
-        "3. Set Finish Diameter (stock OD) and Finish Z (final face Z position).\n\n"
-        "4. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
-        "5. Press RUN."
+        "1. Position tool at the outer edge of the stock, lightly touching the face.\n\n"
+        "2. Set Finish Diameter (stock OD) and Finish Z (final face Z position).\n\n"
+        "3. Set Surface Speed, Feed Rate and Depth of Cut.\n\n"
+        "4. Press RUN.\n\n"
+        "Note: the tool will be at Finish Z when complete. "
+        "The retract distance between passes is set by Depth of Cut."
     ),
     'chamfer': (
-        "1. Select a 45° chamfering tool (Tool Number).\n\n"
+        "1. Position the tool close to the edge of the bore or shoulder.\n\n"
         "2. Set Diameter at Corner and Z at Corner to the workpiece corner position.\n\n"
         "3. Set Chamfer Size (width along each face).\n\n"
         "4. Select corner type: Front Outside (OD/end), Front Inside (bore/end) or Rear Outside (OD/shoulder).\n\n"
-        "5. Press RUN."
+        "5. Press RUN.\n\n"
+        "Note: Step per Pass sets the Z retract between passes. "
+        "The tool returns to the initial X and Z positions on completion."
     ),
     'radius': (
-        "1. Select a round-nose tool (Tool Number).\n\n"
-        "2. Set Diameter at Corner and Z at Corner to the workpiece corner position.\n\n"
-        "3. Set Radius Size.\n\n"
-        "4. Select corner type: Front Outside, Front Inside or Rear Outside.\n\n"
-        "5. Press RUN."
+        "1. Set Diameter at Corner and Z at Corner to the workpiece corner position.\n\n"
+        "2. Set Radius Size.\n\n"
+        "3. Select corner type: Front Outside, Front Inside or Rear Outside.\n\n"
+        "4. Press RUN."
     ),
     'threading': (
-        "1. Select a threading insert (Tool Number).\n\n"
-        "2. Set Thread Diameter (nominal) and Finish Z (thread end, negative).\n\n"
-        "3. Set Thread Pitch (mm) and Speed (constant RPM, typically 200–400).\n\n"
+        "1. Set Thread Diameter (nominal) and Finish Z (thread end, negative).\n\n"
+        "2. Set Thread Pitch and Depth of Cut (first pass depth).\n\n"
+        "3. Set Surface Speed and Max RPM.\n\n"
         "4. Select External or Internal.\n\n"
-        "5. Press RUN."
+        "5. Press RUN.\n\n"
+        "Note: G76 uses spindle encoder synchronisation — thread pitch is "
+        "guaranteed by the encoder and is not affected by feed override. "
+        "Surface Speed and Max RPM have the most influence on actual spindle RPM. "
+        "MVEL must be at 100% or a following error may result."
     ),
     'groove': (
-        "1. Select a grooving tool (Tool Number).\n\n"
-        "2. Set Groove Diameter to the finished diameter at the groove bottom.\n\n"
-        "3. Set Groove Z to the Z position of the groove centre.\n\n"
-        "4. Use a low Feed Rate (typically 0.03–0.08 mm/rev).\n\n"
-        "5. Position the tool at the stock OD.\n\n"
-        "6. Press RUN."
+        "1. Set Groove Diameter to the finished diameter at the groove bottom.\n\n"
+        "2. Set Groove Z to the Z position of the rear groove face.\n\n"
+        "3. Use a low Feed Rate (typically 0.03–0.08 mm/rev).\n\n"
+        "4. Position the tool at the stock OD.\n\n"
+        "5. Press RUN."
     ),
     'drill': (
-        "1. Select a drill bit (Tool Number).\n\n"
-        "2. Centre-drill first if needed.\n\n"
-        "3. Set Drill Diameter, Drill Depth Z (negative) and Peck Distance (0 = no pecking).\n\n"
-        "4. Set Surface Speed and Feed Rate.\n\n"
-        "5. Press RUN."
+        "1. Centre-drill first if needed.\n\n"
+        "2. Set Drill Diameter, Drill Depth Z (negative) and Peck Distance (0 = no pecking).\n\n"
+        "3. Set Surface Speed and Feed Rate.\n\n"
+        "4. Press RUN."
     ),
 }
 
@@ -380,6 +384,7 @@ class NumpadDialog(QDialog):
         lbl.setAlignment(Qt.AlignCenter); outer.addWidget(lbl)
         self.display = QLineEdit(value)
         self.display.setAlignment(Qt.AlignRight); outer.addWidget(self.display)
+        self.display.selectAll()
         grid = QHBoxLayout()
         col = [QVBoxLayout(), QVBoxLayout(), QVBoxLayout()]
         for text, c in [('7',0),('4',0),('1',0),('0',0),
@@ -421,7 +426,10 @@ class NumpadDialog(QDialog):
             c = self.display.text()
             self.display.setText(c[1:] if c.startswith('-') else '-' + c)
         else:
-            self.display.setText(self.display.text() + t)
+            if self.display.selectedText() == self.display.text():
+                self.display.setText(t)
+            else:
+                self.display.setText(self.display.text() + t)
 
     def _bsp(self): self.display.setText(self.display.text()[:-1])
 
@@ -675,7 +683,6 @@ class ThreadingPage(OpPage):
             ('doc',   'Depth of Cut',   'First-pass depth (G76 j parameter)',       'mm',     0.1, 'length'),
             ('ss',    'Surface Speed',    'Cutting speed at tool tip',                'm/min', 100.0, 'speed'),
             ('maxrpm','Max RPM',         'RPM limit (G96 D parameter)',              'RPM',  400.0, 'int'),
-            ('tool',  'Tool Number',     '',                                         '',       5.0, 'int'),
             ('coolant','Coolant',        '0 = off, 1 = on',                         '',       0.0, 'int'),
         ]
 
@@ -726,7 +733,7 @@ class ThreadingPage(OpPage):
     def _call(self, f):
         tid = 1.0 if self.rb_int.isChecked() else 0.0
         return (f"O<threading> call [{f['ss']}] [{f['maxrpm']}] [1.0] [{f['doc']}] "
-                f"[{f['tool']}] [{f['coolant']}] [0] [0] "
+                f"[#<_current_tool>] [{f['coolant']}] [0] [0] "
                 f"[{f['x']}] [{f['z']}] [{f['pitch']}] [{tid}]")
 
     def state(self):
@@ -744,16 +751,16 @@ class ThreadingPage(OpPage):
 def _turn_call(f):
     return (f"O<turning> call [{f['x']}] [{f['ss']}] [{f['doc']}] "
             f"[{f['feed']}] [{f['z']}] [{f.get('radius', 0)}] [{f.get('angle', 0)}] "
-            f"[{f['tool']}] [{f['coolant']}] [{f['maxrpm']}]")
+            f"[#<_current_tool>] [{f['coolant']}] [{f['maxrpm']}]")
 
 def _bore_call(f):
     return (f"O<boring> call [{f['x']}] [{f['ss']}] [{f['doc']}] "
             f"[{f['feed']}] [{f['z']}] [{f.get('radius', 0)}] [{f.get('angle', 0)}] "
-            f"[{f['tool']}] [{f['coolant']}] [{f['maxrpm']}]")
+            f"[#<_current_tool>] [{f['coolant']}] [{f['maxrpm']}]")
 
 def _face_call(f):
     return (f"O<facing> call [{f['ss']}] [{f['maxrpm']}] [{f['feed']}] "
-            f"[{f['doc']}] [{f['tool']}] [{f['coolant']}] [{f.get('angle', 0)}] "
+            f"[{f['doc']}] [#<_current_tool>] [{f['coolant']}] [{f.get('angle', 0)}] "
             f"[{f['x']}] [{f['z']}]")
 
 def _chamfer_call(page):
@@ -763,7 +770,7 @@ def _chamfer_call(page):
         fi = f['size'] if sel == 'fi' else 0.0
         bo = f['size'] if sel == 'bo' else 0.0
         return (f"O<chamfer> call [{f['x']}] [{f['ss']}] [{f['doc']}] "
-                f"[{f['z']}] [{f['tool']}] [{f['feed']}] "
+                f"[{f['z']}] [#<_current_tool>] [{f['feed']}] "
                 f"[{fo}] [{fi}] [{bo}] [{f['coolant']}] [{f['maxrpm']}] [21]")
     return _call
 
@@ -774,18 +781,18 @@ def _radius_call(page):
         fi = f['size'] if sel == 'fi' else 0.0
         bo = f['size'] if sel == 'bo' else 0.0
         return (f"O<radius> call [{f['x']}] [{f['ss']}] [{f['feed']}] "
-                f"[{f['doc']}] [{f['z']}] [{f['tool']}] [0] "
+                f"[{f['doc']}] [{f['z']}] [#<_current_tool>] [0] "
                 f"[{fo}] [{fi}] [{bo}] [{f['coolant']}] [{f['maxrpm']}]")
     return _call
 
 def _drill_call(f):
     return (f"O<drill> call [{f['dia']}] [{f['depth']}] [{f['ss']}] "
-            f"[{f['feed']}] [{f['tool']}] [{f['peck']}] [0] "
+            f"[{f['feed']}] [#<_current_tool>] [{f['peck']}] [0] "
             f"[{f['coolant']}] [0] [0] [{f['maxrpm']}] [21]")
 
 def _groove_call(f):
     return (f"O<grooving> call [{f['x']}] [{f['ss']}] [{f['feed']}] "
-            f"[{f['tool']}] [{f['coolant']}] [{f['z']}] [{f['maxrpm']}]")
+            f"[#<_current_tool>] [{f['coolant']}] [{f['z']}] [{f['maxrpm']}]")
 
 
 # ---------------------------------------------------------------------------
@@ -823,7 +830,6 @@ class UserTab(QWidget):
             ('maxrpm', 'Max RPM',            'RPM limit (G96 D parameter)',        'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per spindle revolution',        'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (radius)', 'mm',     1.0, 'length'),
-            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _turn_call, 'Turning')
 
@@ -836,7 +842,6 @@ class UserTab(QWidget):
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (radius)', 'mm',     1.0, 'length'),
-            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _bore_call, 'Boring')
 
@@ -848,7 +853,6 @@ class UserTab(QWidget):
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.15,'feed'),
             ('doc',    'Depth of Cut',       'Material removed per pass (Z)',      'mm',     1.0, 'length'),
-            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _face_call, 'Facing')
 
@@ -861,7 +865,6 @@ class UserTab(QWidget):
             ('maxrpm', 'Max RPM',            'RPM limit',                         'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',               'mm/rev', 0.15,'feed'),
             ('doc',    'Step per Pass',      'Chamfer increment each pass',       'mm',     0.5, 'length'),
-            ('tool',   'Tool Number',        '',                                  '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                 '',       0.0, 'int'),
         ], [
             ('fo', 'Front Outside  (OD / end face)'),
@@ -881,7 +884,6 @@ class UserTab(QWidget):
             ('maxrpm', 'Max RPM',            'RPM limit',                         'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',               'mm/rev', 0.15,'feed'),
             ('doc',    'Step per Pass',      'Radius increment each pass',        'mm',     0.5, 'length'),
-            ('tool',   'Tool Number',        '',                                  '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                 '',       0.0, 'int'),
         ], [
             ('fo', 'Front Outside  (OD / end face)'),
@@ -904,17 +906,15 @@ class UserTab(QWidget):
             ('ss',     'Surface Speed',      'Cutting speed at drill tip',         'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per revolution',                'mm/rev', 0.05,'feed'),
-            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _drill_call, 'Drilling')
 
         add('groove', LAYER['groove'], [
             ('x',      'Groove Diameter',    'Finished diameter at groove bottom', 'mm',     0.0, 'length'),
-            ('z',      'Groove Z',           'Z position of groove centre',        'mm',     0.0, 'length'),
+            ('z',      'Groove Z',           'Z position of rear groove face',     'mm',     0.0, 'length'),
             ('ss',     'Surface Speed',      'Cutting speed at tool tip',          'm/min', 100.0,'speed'),
             ('maxrpm', 'Max RPM',            'RPM limit',                          'RPM',  2000.0,'int'),
             ('feed',   'Feed Rate',          'Feed per rev (typically 0.03–0.08)', 'mm/rev', 0.05,'feed'),
-            ('tool',   'Tool Number',        '',                                   '',       1.0, 'int'),
             ('coolant','Coolant',            '0 = off,  1 = on',                  '',       0.0, 'int'),
         ], _groove_call, 'Grooving')
 
