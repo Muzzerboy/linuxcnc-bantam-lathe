@@ -18,4 +18,4 @@ net tool-change-confirmed   <=  qtpyvcp_manualtoolchange.changed
 net tool-number             =>  qtpyvcp_manualtoolchange.number
 
 # *** Set line below for actual spindle readout from your hal file ***
-net spindle-rpm-filtered.0 scale_to_rpm.out  =>  qtpyvcp.spindle-encoder-rpm.in
+net spindle-vel-fb-rpm-abs scale_to_rpm.out  =>  qtpyvcp.spindle-encoder-rpm.in

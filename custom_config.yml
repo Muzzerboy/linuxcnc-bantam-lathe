@@ -43,3 +43,6 @@ settings:
   backplot.perspective-view:
     default_value: false
 
+  dro.display-units:
+    default_value: 2
+
